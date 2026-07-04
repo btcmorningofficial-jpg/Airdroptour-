@@ -1,0 +1,32 @@
+workflows:
+  android-release:
+    name: Android Release
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      android_signing:
+        - airdroptour_key
+      flutter: stable
+      vars:
+        PACKAGE_NAME: "com.airdroptour"
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      - name: Build AAB (Google Play için)
+        script: |
+          flutter build appbundle --release
+      - name: Build APK (test için)
+        script: |
+          flutter build apk --release
+    artifacts:
+      - build/**/outputs/**/*.aab
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/mapping.txt
+    publishing:
+      email:
+        recipients:
+          - btccoinmorning@gmail.com
+        notify:
+          success: true
+          failure: true
