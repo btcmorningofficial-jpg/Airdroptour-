@@ -23,7 +23,7 @@ class MyProfileData extends ChangeNotifier {
   }
 
   static String status() {
-    return data.value["data"]["status"] ?? "active";
+    return data.value["data"]?["status"] ?? "active";
   }
 
   static String uid() {
@@ -35,27 +35,33 @@ class MyProfileData extends ChangeNotifier {
   }
 
   static List follower() {
-    return data.value["data"]["follower"] ?? [];
+    final raw = data.value["data"]?["follower"];
+    if (raw is List) return raw;
+    return [];
   }
 
   static bool isAdmin() {
-    return data.value["data"]["isAdmin"] ?? false;
+    return data.value["data"]?["isAdmin"] == true;
   }
 
   static bool premium() {
-    return data.value["data"]["verify"] ?? false;
+    return data.value["data"]?["verify"] == true;
   }
 
   static List cripto() {
-    return data.value["data"]["cripto"] ?? [];
+    final raw = data.value["data"]?["cripto"];
+    if (raw is List) return raw;
+    return [];
   }
 
   static Map<String, dynamic> social() {
-    return data.value["data"]["social"] ?? {};
+    final raw = data.value["data"]?["social"];
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    return {};
   }
 
   static String bio() {
-    return data.value["data"]["bio"] ?? "";
+    return data.value["data"]?["bio"] ?? "";
   }
 
   static Future<void> addFavorite(
@@ -148,30 +154,36 @@ class YouProfileData extends ChangeNotifier {
   }
 
   static List follower() {
-    return data.value["data"]["follower"] ?? [];
+    final raw = data.value["data"]?["follower"];
+    if (raw is List) return raw;
+    return [];
   }
 
   static bool isAdmin() {
-    return data.value["data"]["isAdmin"] ?? false;
+    return data.value["data"]?["isAdmin"] == true;
   }
 
   static List cripto() {
-    return data.value["data"]["cripto"] ?? [];
+    final raw = data.value["data"]?["cripto"];
+    if (raw is List) return raw;
+    return [];
   }
 
   static Map<String, dynamic> social() {
-    return data.value["data"]["social"] ?? {};
+    final raw = data.value["data"]?["social"];
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    return {};
   }
 
   static String bio() {
-    return data.value["data"]["bio"] ?? "";
+    return data.value["data"]?["bio"] ?? "";
   }
 
   static bool premium() {
-    return data.value["data"]["verify"] ?? false;
+    return data.value["data"]?["verify"] == true;
   }
 
   static String status() {
-    return data.value["data"]["status"] ?? "active";
+    return data.value["data"]?["status"] ?? "active";
   }
 }
