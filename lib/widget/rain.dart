@@ -87,7 +87,7 @@ class _RainComponentState extends State<RainComponent> {
                 SizedBox(height: 12),
                 _buildUserData(
                   Icons.card_giftcard_rounded,
-                  "Ödül",
+                  "Reward",
                   widget.award,
                 ),
               ],
