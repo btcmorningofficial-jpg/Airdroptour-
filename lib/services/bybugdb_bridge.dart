@@ -73,9 +73,9 @@ class ByBugAuth {
         await _saveSession(j['token'], j['uid']);
         return [1, 'ok'];
       }
-      return [0, j['message'] ?? 'Kayıt başarısız'];
+      return [0, j['message'] ?? 'Registration failed'];
     } catch (e) {
-      return [0, 'Sunucuya bağlanılamadı'];
+      return [0, 'Could not connect to server'];
     }
   }
 
@@ -91,9 +91,9 @@ class ByBugAuth {
         await _saveSession(j['token'], j['uid']);
         return [1, 'ok'];
       }
-      return [0, j['message'] ?? 'Giriş başarısız'];
+      return [0, j['message'] ?? 'Login failed'];
     } catch (e) {
-      return [0, 'Sunucuya bağlanılamadı'];
+      return [0, 'Could not connect to server'];
     }
   }
 

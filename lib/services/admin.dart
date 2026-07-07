@@ -1,4 +1,5 @@
 import 'package:airdrop/page/profile.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/tools/navigator.dart';
@@ -74,11 +75,13 @@ class AdminServices extends ChangeNotifier {
     String image,
     String name,
     String details,
+    String website,
   ) async {
     await ByBugDatabase.add("crypto", CosmosRandom.randomTag(), {
       "image": image,
       "details": details,
       "name": name,
+      "website": website,
       "uid": MyProfileData.uid(),
       "create_at": DateTime.now().toString(),
     });
@@ -257,6 +260,7 @@ class AdminServices extends ChangeNotifier {
             photo: val["image"],
             name: val["name"],
             details: val["details"],
+            website: val["website"],
           ),
         );
       }
@@ -282,6 +286,7 @@ class AdminServices extends ChangeNotifier {
                     photo: val["image"],
                     name: val["name"],
                     details: val["details"],
+                    website: val["website"],
                   ),
                 ),
                 Icon(Icons.arrow_forward_ios, color: textColor),
@@ -303,6 +308,7 @@ class AdminServices extends ChangeNotifier {
     ValueNotifier<String> imgCripto = ValueNotifier("");
     TextEditingController varlikName = TextEditingController();
     TextEditingController varlikDetails = TextEditingController();
+    TextEditingController varlikWebsite = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
@@ -382,6 +388,15 @@ class AdminServices extends ChangeNotifier {
                                 LengthLimitingTextInputFormatter(1200),
                               ],
                             ),
+                            textfield(
+                              text: "Official Website (https://...)",
+                              textController: varlikWebsite,
+                              keyboardType: TextInputType.url,
+                              maxLines: 1,
+                              inputFormatters: [
+                                LengthLimitingTextInputFormatter(300),
+                              ],
+                            ),
 
                             SizedBox(height: 10),
                             GestureDetector(
@@ -390,6 +405,7 @@ class AdminServices extends ChangeNotifier {
                                   imgCripto.value,
                                   varlikName.text,
                                   varlikDetails.text,
+                                  varlikWebsite.text,
                                 );
                                 if (!context.mounted) return;
                                 pop(context);
@@ -549,6 +565,7 @@ class CryptoWidget extends StatelessWidget {
   final String photo;
   final String name;
   final String details;
+  final String? website;
   final bool? readOnly;
   const CryptoWidget({
     super.key,
@@ -556,8 +573,20 @@ class CryptoWidget extends StatelessWidget {
     required this.photo,
     required this.name,
     required this.details,
+    this.website,
     this.readOnly,
   });
+
+  static const Map<String, String> exchangeLinks = {
+    "LBank": "https://www.lbkpro.net/ref/F694",
+    "Binance":
+        "https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00V117EBZL",
+    "MEXC": "https://promote.mexc.com/r/gJvZH1E5tf",
+    "Gate.io":
+        "https://www.gate.com/referral/earn-together/invite/UlFDVwpZ?ref=UlFDVwpZ&ref_type=103&utm_cmp=rXJBDjtJ&activity_id=1781161013843",
+    "KuCoin":
+        "https://www.kucoin.com/ucenter/signup?rcode=CX87A4A7&utm_source=app_g_Share",
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -593,6 +622,71 @@ class CryptoWidget extends StatelessWidget {
                           SizedBox(height: 10),
                           h5(name),
                           Expanded(child: markdownText(details)),
+
+                          if (website != null && website!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final uri = Uri.tryParse(website!);
+                                  if (uri != null) {
+                                    await launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  width: widthSizer(context),
+                                  decoration: BoxDecoration(
+                                    color: cColor,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Center(
+                                    child: h5("Visit Official Website"),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          SizedBox(
+                            height: 40,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: CryptoWidget.exchangeLinks.entries.map(
+                                (entry) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: GestureDetector(
+                                      onTap: () async {
+                                        final uri = Uri.tryParse(entry.value);
+                                        if (uri != null) {
+                                          await launchUrl(
+                                            uri,
+                                            mode: LaunchMode.externalApplication,
+                                          );
+                                        }
+                                      },
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 8,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: defaultColor,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: h5("Buy on ${entry.key}"),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ).toList(),
+                            ),
+                          ),
 
                           SizedBox(height: 10),
                           GestureDetector(

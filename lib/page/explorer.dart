@@ -65,6 +65,7 @@ class ExplorerPage extends StatelessWidget {
                               ),
                               Expanded(
                                 child: SingleChildScrollView(
+                                  padding: const EdgeInsets.only(bottom: 90),
                                   child: Column(
                                     children: AdminServices
                                         .criptoExplorerListFiltered
