@@ -649,44 +649,6 @@ class CryptoWidget extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          SizedBox(
-                            height: 40,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              children: CryptoWidget.exchangeLinks.entries.map(
-                                (entry) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 8),
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        final uri = Uri.tryParse(entry.value);
-                                        if (uri != null) {
-                                          await launchUrl(
-                                            uri,
-                                            mode: LaunchMode.externalApplication,
-                                          );
-                                        }
-                                      },
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: defaultColor,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: h5("Buy on ${entry.key}"),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ).toList(),
-                            ),
-                          ),
 
                           SizedBox(height: 10),
                           GestureDetector(
