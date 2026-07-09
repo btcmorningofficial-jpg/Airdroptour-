@@ -31,20 +31,30 @@ class AdminServices extends ChangeNotifier {
 
   static Future<void> getUsers() async {
     var usrs = await ByBugDatabase.getAll(bucket);
-    adminUserList.value.clear();
+    List<Widget> temp = [];
     for (var element in usrs) {
-      adminUserList.value.add(
-        AdminUserComponent(
-          isAdmin: element["value"]["data"]["isAdmin"] ?? false,
-          verify: element["value"]["data"]["verify"] ?? false,
-          status: element["value"]["data"]["status"] ?? "active",
-          photo: element["value"]["photo"],
-          name: element["value"]["name"],
-          email: element["value"]["email"],
-          uid: element["value"]["uid"],
-        ),
-      );
+      try {
+        final Map<String, dynamic> value =
+            Map<String, dynamic>.from(element["value"] ?? {});
+        final Map<String, dynamic> data =
+            Map<String, dynamic>.from(value["data"] ?? {});
+        temp.add(
+          AdminUserComponent(
+            isAdmin: data["isAdmin"] ?? false,
+            verify: data["verify"] ?? false,
+            status: data["status"] ?? "active",
+            photo: value["photo"] ?? "",
+            name: value["name"] ?? "",
+            email: value["email"] ?? "",
+            uid: value["uid"] ?? element["tag"] ?? "",
+          ),
+        );
+      } catch (_) {
+        // Bozuk/eksik kayıt varsa atla, listenin tamamını çökertme.
+        continue;
+      }
     }
+    adminUserList.value = temp;
     adminUserList.notifyListeners();
   }
 
