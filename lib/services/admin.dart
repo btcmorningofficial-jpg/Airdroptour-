@@ -24,6 +24,10 @@ class AdminServices extends ChangeNotifier {
   static ValueNotifier<Map<String, dynamic>> adsVal = ValueNotifier({});
   static ValueNotifier<List<Widget>> criptoHomeList = ValueNotifier([]);
   static ValueNotifier<List<Widget>> criptoExplorerList = ValueNotifier([]);
+  static ValueNotifier<List<Widget>> exchangeLinksAdminList = ValueNotifier(
+    [],
+  );
+  static Map<String, String> exchangeLinksDynamic = {};
 
   static final ValueNotifier<List<Widget>> criptoExplorerListFiltered =
       ValueNotifier([]);
@@ -255,6 +259,8 @@ class AdminServices extends ChangeNotifier {
 
   static List<String> cryptosNames = [];
   static Future<void> getHomeCryptos(BuildContext context) async {
+    // Borsa linklerini arka planda yükle (kart açıldığında hazır olsun).
+    getExchangeLinks(context);
     var crypto = await ByBugDatabase.getAll("crypto");
     cryptosNames.clear();
     List<Widget> tempCrypto = [];
@@ -568,6 +574,151 @@ class AdminServices extends ChangeNotifier {
       },
     );
   }
+
+  // ---- Borsa Linkleri (Exchange Links) ----
+
+  static Future<void> addExchangeLinkDB(String name, String url) async {
+    await ByBugDatabase.add("exchange_links", CosmosRandom.randomTag(), {
+      "name": name,
+      "url": url,
+      "create_at": DateTime.now().toString(),
+    });
+  }
+
+  static Future<void> getExchangeLinks(BuildContext context) async {
+    var links = await ByBugDatabase.getAll("exchange_links");
+    List<Widget> temp = [];
+    Map<String, String> tempMap = {};
+
+    for (var element in links) {
+      Map<String, dynamic> val = element["value"] ?? {};
+      final String name = val["name"] ?? "";
+      final String url = val["url"] ?? "";
+      if (name.isEmpty || url.isEmpty) continue;
+      tempMap[name] = url;
+
+      temp.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    bold(name),
+                    p(url, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  await ByBugDatabase.remove("exchange_links", element["tag"]);
+                  if (!context.mounted) return;
+                  getSuccessSnack(context, "Borsa Linki Silindi.");
+                  await getExchangeLinks(context);
+                },
+                child: Icon(Icons.delete_forever, color: Colors.red),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    exchangeLinksDynamic = tempMap;
+    exchangeLinksAdminList.value = temp;
+    exchangeLinksAdminList.notifyListeners();
+  }
+
+  static void addExchangeLink(BuildContext context) {
+    TextEditingController nameCtrl = TextEditingController();
+    TextEditingController urlCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              GestureDetector(
+                onTap: () => pop(context),
+                child: Container(
+                  width: width(context),
+                  height: height(context),
+                  color: Colors.transparent,
+                ),
+              ),
+              Center(
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  width: widthSizer(context) * 0.9,
+                  decoration: BoxDecoration(
+                    color: navColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 10),
+                      h3("Borsa Linkleri", color: defaultColor),
+                      p("Yeni Borsa Linki Ekle"),
+                      SizedBox(height: 20),
+                      textfield(
+                        text: "Borsa Adı (örn. Binance)",
+                        textController: nameCtrl,
+                        keyboardType: TextInputType.name,
+                        maxLines: 1,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(60),
+                        ],
+                      ),
+                      textfield(
+                        text: "Link (https://...)",
+                        textController: urlCtrl,
+                        keyboardType: TextInputType.url,
+                        maxLines: 1,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(500),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () async {
+                          if (nameCtrl.text.trim().isEmpty ||
+                              urlCtrl.text.trim().isEmpty) {
+                            return;
+                          }
+                          await addExchangeLinkDB(
+                            nameCtrl.text.trim(),
+                            urlCtrl.text.trim(),
+                          );
+                          if (!context.mounted) return;
+                          pop(context);
+                          getSuccessSnack(context, "Borsa Linki Eklendi");
+                          await getExchangeLinks(context);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          width: widthSizer(context),
+                          decoration: BoxDecoration(
+                            color: defaultColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(child: h5("Publish")),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class CryptoWidget extends StatelessWidget {
@@ -587,7 +738,7 @@ class CryptoWidget extends StatelessWidget {
     this.readOnly,
   });
 
-  static const Map<String, String> exchangeLinks = {
+  static const Map<String, String> _defaultExchangeLinks = {
     "LBank": "https://www.lbkpro.net/ref/F694",
     "Binance":
         "https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00V117EBZL",
@@ -597,6 +748,12 @@ class CryptoWidget extends StatelessWidget {
     "KuCoin":
         "https://www.kucoin.com/ucenter/signup?rcode=CX87A4A7&utm_source=app_g_Share",
   };
+
+  // Admin panelden eklenen linkler varsa onları kullan, yoksa varsayılanları göster.
+  static Map<String, String> get exchangeLinks =>
+      AdminServices.exchangeLinksDynamic.isNotEmpty
+      ? AdminServices.exchangeLinksDynamic
+      : _defaultExchangeLinks;
 
   @override
   Widget build(BuildContext context) {
