@@ -41,7 +41,7 @@ class Auth extends ChangeNotifier {
       }
     } catch (e) {
       if (!context.mounted) return;
-      getErrorSnack(context, "An error occurred during Google sign-in");
+      getErrorSnack(context, "Google sign-in error: $e");
     }
   }
 
