@@ -47,6 +47,59 @@ class LoginPage extends StatelessWidget {
                 child: Center(child: h5("Login")),
               ),
             ),
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Divider(),
+                  ),
+                ),
+                subP("veya"),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Divider(),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => Auth.loginWithGoogle(context),
+              child: Container(
+                padding: EdgeInsets.all(8),
+                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                width: widthSizer(context),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: navColor),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.network(
+                      "https://www.google.com/favicon.ico",
+                      width: 18,
+                      height: 18,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.g_mobiledata, color: Colors.black),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      "Google ile devam et",
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             GestureDetector(
               onTap: () {
                 push(context, RegisterPage());
