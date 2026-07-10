@@ -115,6 +115,24 @@ class ByBugAuth {
     }
   }
 
+  static Future<List<dynamic>> deleteUser(String targetUid) async {
+    try {
+      final headers = await _authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/auth/delete_user.php'),
+        headers: headers,
+        body: jsonEncode({'uid': targetUid}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, 'ok'];
+      }
+      return [0, j['message'] ?? 'Could not delete user'];
+    } catch (e) {
+      return [0, 'Could not connect to server'];
+    }
+  }
+
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
