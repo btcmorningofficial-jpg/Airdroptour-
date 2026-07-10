@@ -27,7 +27,7 @@ class Auth extends ChangeNotifier {
 
       if (idToken == null) {
         if (!context.mounted) return;
-        getErrorSnack(context, "Google girişi başarısız oldu");
+        getErrorSnack(context, "Google sign-in failed");
         return;
       }
 
@@ -41,7 +41,7 @@ class Auth extends ChangeNotifier {
       }
     } catch (e) {
       if (!context.mounted) return;
-      getErrorSnack(context, "Google girişi sırasında bir hata oluştu");
+      getErrorSnack(context, "An error occurred during Google sign-in");
     }
   }
 
