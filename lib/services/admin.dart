@@ -615,7 +615,7 @@ class AdminServices extends ChangeNotifier {
                 onTap: () async {
                   await ByBugDatabase.remove("exchange_links", element["tag"]);
                   if (!context.mounted) return;
-                  getSuccessSnack(context, "Borsa Linki Silindi.");
+                  getSuccessSnack(context, "Exchange link deleted.");
                   await getExchangeLinks(context);
                 },
                 child: Icon(Icons.delete_forever, color: Colors.red),
@@ -661,11 +661,11 @@ class AdminServices extends ChangeNotifier {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(height: 10),
-                      h3("Borsa Linkleri", color: defaultColor),
-                      p("Yeni Borsa Linki Ekle"),
+                      h3("Exchange Links", color: defaultColor),
+                      p("Add New Exchange Link"),
                       SizedBox(height: 20),
                       textfield(
-                        text: "Borsa Adı (örn. Binance)",
+                        text: "Exchange Name (e.g. Binance)",
                         textController: nameCtrl,
                         keyboardType: TextInputType.name,
                         maxLines: 1,
@@ -695,7 +695,7 @@ class AdminServices extends ChangeNotifier {
                           );
                           if (!context.mounted) return;
                           pop(context);
-                          getSuccessSnack(context, "Borsa Linki Eklendi");
+                          getSuccessSnack(context, "Exchange Link Added");
                           await getExchangeLinks(context);
                         },
                         child: Container(

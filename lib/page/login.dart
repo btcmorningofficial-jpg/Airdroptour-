@@ -57,7 +57,7 @@ class LoginPage extends StatelessWidget {
                     child: Divider(),
                   ),
                 ),
-                subP("veya"),
+                subP("or"),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -90,7 +90,7 @@ class LoginPage extends StatelessWidget {
                     ),
                     SizedBox(width: 10),
                     Text(
-                      "Google ile devam et",
+                      "Continue with Google",
                       style: TextStyle(
                         color: Colors.black87,
                         fontWeight: FontWeight.w600,

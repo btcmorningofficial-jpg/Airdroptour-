@@ -59,14 +59,16 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
   Future<void> _finish() async {
     if (!canContinue) {
       String missing = "";
-      if (!_hasPhoto) missing = "profil fotoğrafı";
+      if (!_hasPhoto) missing = "profile photo";
       if (!_hasGender) {
-        missing = missing.isEmpty ? "cinsiyet" : "$missing, cinsiyet";
+        missing = missing.isEmpty ? "gender" : "$missing, gender";
       }
       if (!_hasThreeCoins) {
-        missing = missing.isEmpty ? "en az 3 kripto" : "$missing, en az 3 kripto";
+        missing = missing.isEmpty
+            ? "at least 3 cryptocurrencies"
+            : "$missing, at least 3 cryptocurrencies";
       }
-      getErrorSnack(context, "Devam etmek için gerekli: $missing");
+      getErrorSnack(context, "Required to continue: $missing");
       return;
     }
 
@@ -133,17 +135,17 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                 child: Column(
                   children: [
                     SizedBox(height: 20),
-                    h1("Profilini Tamamla"),
+                    h1("Complete Your Profile"),
                     SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: subP(
-                        "Devam etmeden önce birkaç bilgiyi tamamlaman gerekiyor.",
+                        "A few more details are needed before you continue.",
                       ),
                     ),
                     SizedBox(height: 24),
 
-                    // Profil fotoğrafı
+                    // Profile photo
                     GestureDetector(
                       onTap: () async {
                         String? image = await pickImage();
@@ -171,25 +173,25 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                       ),
                     ),
                     SizedBox(height: 6),
-                    subP("Profil Fotoğrafı (zorunlu)"),
+                    subP("Profile Photo (required)"),
                     SizedBox(height: 28),
 
-                    // Cinsiyet
-                    bold("Cinsiyet"),
+                    // Gender
+                    bold("Gender"),
                     SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _genderButton("male", "Erkek"),
+                        _genderButton("male", "Male"),
                         SizedBox(width: 12),
-                        _genderButton("female", "Kadın"),
+                        _genderButton("female", "Female"),
                       ],
                     ),
                     SizedBox(height: 28),
 
-                    // Kripto seçimi
+                    // Crypto selection
                     bold(
-                      "En Az 3 Kripto Seç (${selectedCryptos.value.length}/3)",
+                      "Select At Least 3 Cryptocurrencies (${selectedCryptos.value.length}/3)",
                     ),
                     SizedBox(height: 12),
                     if (loadingCryptos)
@@ -201,7 +203,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: subP(
-                          "Şu anda seçilebilecek kripto varlığı bulunamadı.",
+                          "No cryptocurrencies are currently available to select.",
                         ),
                       )
                     else
@@ -260,7 +262,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
-                          child: h5(loading ? "Kaydediliyor..." : "Devam Et"),
+                          child: h5(loading ? "Saving..." : "Continue"),
                         ),
                       ),
                     ),
