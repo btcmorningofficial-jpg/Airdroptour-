@@ -2,6 +2,7 @@ import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/sizer.dart';
+import 'package:airdrop/widget/snack.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
@@ -108,6 +109,12 @@ class _AdminRainComponentState extends State<AdminRainComponent> {
                       statusValue.value = "pending";
                       await ByBugDatabase.update("rain", widget.tag, val);
                     } else if ("delete (permanent)" == p0) {
+                      // SelectDialog kapanma animasyonu bitmeden yeni bir
+                      // dialog açmaya çalışmak sessizce başarısız olabiliyor;
+                      // bir sonraki frame'e kadar bekliyoruz.
+                      await Future.delayed(const Duration(milliseconds: 300));
+                      if (!context.mounted) return;
+
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
@@ -129,11 +136,17 @@ class _AdminRainComponentState extends State<AdminRainComponent> {
                         ),
                       );
                       if (confirm == true) {
-                        await ByBugDatabase.remove("rain", widget.tag);
-                        if (mounted) {
-                          setState(() {
-                            _deleted = true;
-                          });
+                        try {
+                          await ByBugDatabase.remove("rain", widget.tag);
+                          if (mounted) {
+                            setState(() {
+                              _deleted = true;
+                            });
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            getErrorSnack(context, "Delete failed: $e");
+                          }
                         }
                       }
                     }
