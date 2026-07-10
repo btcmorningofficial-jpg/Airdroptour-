@@ -22,6 +22,8 @@ class Auth extends ChangeNotifier {
         "social": {},
         "isAdmin": false,
         "status": "active", // active, deactive, ban
+        "gender": null,
+        "profileCompleted": false,
       },
     );
     if (x[0] == 1) {
