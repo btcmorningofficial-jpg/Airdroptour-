@@ -11,7 +11,11 @@ class Auth extends ChangeNotifier {
   static TextEditingController password = TextEditingController();
   static TextEditingController name = TextEditingController();
 
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email'],
+    serverClientId:
+        '594788456822-dnl6qujce1sp13nalkel4gnjhn5vhtel.apps.googleusercontent.com',
+  );
 
   static void loginWithGoogle(BuildContext context) async {
     try {
