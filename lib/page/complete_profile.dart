@@ -7,6 +7,7 @@ import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/sizer.dart';
 import 'package:airdrop/widget/snack.dart';
 import 'package:airdrop/widget/text.dart';
+import 'package:cosmos/cosmos.dart';
 import 'package:flutter/material.dart';
 
 // Kayıt sonrası zorunlu profil tamamlama ekranı.
