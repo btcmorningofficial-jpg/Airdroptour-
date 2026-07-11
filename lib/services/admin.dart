@@ -739,7 +739,6 @@ class CryptoWidget extends StatelessWidget {
   });
 
   static const Map<String, String> _defaultExchangeLinks = {
-    "LBank": "https://www.lbkpro.net/ref/F694",
     "Binance":
         "https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00V117EBZL",
     "MEXC": "https://promote.mexc.com/r/gJvZH1E5tf",
@@ -747,6 +746,7 @@ class CryptoWidget extends StatelessWidget {
         "https://www.gate.com/referral/earn-together/invite/UlFDVwpZ?ref=UlFDVwpZ&ref_type=103&utm_cmp=rXJBDjtJ&activity_id=1781161013843",
     "KuCoin":
         "https://www.kucoin.com/ucenter/signup?rcode=CX87A4A7&utm_source=app_g_Share",
+    "LBank": "https://www.lbkpro.net/ref/F694",
   };
 
   // Admin panelden eklenen linkler varsa onları kullan, yoksa varsayılanları göster.
@@ -755,137 +755,59 @@ class CryptoWidget extends StatelessWidget {
       ? AdminServices.exchangeLinksDynamic
       : _defaultExchangeLinks;
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return Scaffold(
-              backgroundColor: Colors.transparent,
-              body: Stack(
-                children: [
-                  GestureDetector(
-                    onTap: () => pop(context),
-                    child: Container(
-                      width: width(context),
-                      height: height(context),
-                      color: Colors.transparent,
-                    ),
+  // Detay penceresini paylaşılan (static) bir fonksiyon olarak dışarı
+  // veriyoruz ki hem CryptoWidget hem de MatchCryptoChip (match kartındaki
+  // kompakt rozetler) aynı pencereyi açabilsin.
+  static void showDetailDialog(
+    BuildContext context, {
+    required String photo,
+    required String name,
+    required String details,
+    String? website,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              GestureDetector(
+                onTap: () => pop(context),
+                child: Container(
+                  width: width(context),
+                  height: height(context),
+                  color: Colors.transparent,
+                ),
+              ),
+              Center(
+                child: Container(
+                  height: height(context) * 0.5,
+                  padding: EdgeInsets.all(8),
+                  width: widthSizer(context) * 0.9,
+                  decoration: BoxDecoration(
+                    color: navColor,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  Center(
-                    child: Container(
-                      height: height(context) * 0.5,
-                      padding: EdgeInsets.all(8),
-                      width: widthSizer(context) * 0.9,
-                      decoration: BoxDecoration(
-                        color: navColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 10),
-                          h5(name),
-                          Expanded(child: markdownText(details)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 10),
+                      h5(name),
+                      Expanded(child: markdownText(details)),
 
-                          if (website != null && website!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: GestureDetector(
-                                onTap: () async {
-                                  final uri = Uri.tryParse(website!);
-                                  if (uri != null) {
-                                    await launchUrl(
-                                      uri,
-                                      mode: LaunchMode.externalApplication,
-                                    );
-                                  }
-                                },
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  width: widthSizer(context),
-                                  decoration: BoxDecoration(
-                                    color: cColor,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Center(
-                                    child: h5("Visit Official Website"),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: CryptoWidget.exchangeLinks.entries.map(
-                              (entry) {
-                                return GestureDetector(
-                                  onTap: () async {
-                                    final uri = Uri.tryParse(entry.value);
-                                    if (uri != null) {
-                                      await launchUrl(
-                                        uri,
-                                        mode: LaunchMode.externalApplication,
-                                      );
-                                    }
-                                  },
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: defaultColor,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: h5(entry.key),
-                                  ),
-                                );
-                              },
-                            ).toList(),
-                          ),
-
-                          SizedBox(height: 10),
-                          GestureDetector(
+                      if (website != null && website.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: GestureDetector(
                             onTap: () async {
-                              if (MyProfileData.hasFavorite(name)) {
-                                MyProfileData.removeFavorite(name);
-                              } else {
-                                await MyProfileData.addFavorite(
-                                  photo,
-                                  details,
-                                  name,
+                              final uri = Uri.tryParse(website);
+                              if (uri != null) {
+                                await launchUrl(
+                                  uri,
+                                  mode: LaunchMode.externalApplication,
                                 );
                               }
-
-                              if (!context.mounted) return;
-                              pop(context);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              width: widthSizer(context),
-                              decoration: BoxDecoration(
-                                color: MyProfileData.hasFavorite(name)
-                                    ? Colors.red
-                                    : defaultColor,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Center(
-                                child: h5(
-                                  MyProfileData.hasFavorite(name)
-                                      ? "Remove from Favorites"
-                                      : "Add to Favorites",
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          GestureDetector(
-                            onTap: () async {
-                              pop(context);
                             },
                             child: Container(
                               padding: EdgeInsets.all(8),
@@ -894,18 +816,115 @@ class CryptoWidget extends StatelessWidget {
                                 color: cColor,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Center(child: h5("Close")),
+                              child: Center(
+                                child: h5("Visit Official Website"),
+                              ),
                             ),
                           ),
-                          SizedBox(height: 10),
-                        ],
+                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: CryptoWidget.exchangeLinks.entries.map((
+                          entry,
+                        ) {
+                          return GestureDetector(
+                            onTap: () async {
+                              final uri = Uri.tryParse(entry.value);
+                              if (uri != null) {
+                                await launchUrl(
+                                  uri,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            },
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: defaultColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: h5(entry.key),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ),
+
+                      SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () async {
+                          if (MyProfileData.hasFavorite(name)) {
+                            MyProfileData.removeFavorite(name);
+                          } else {
+                            await MyProfileData.addFavorite(
+                              photo,
+                              details,
+                              name,
+                            );
+                          }
+
+                          if (!context.mounted) return;
+                          pop(context);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          width: widthSizer(context),
+                          decoration: BoxDecoration(
+                            color: MyProfileData.hasFavorite(name)
+                                ? Colors.red
+                                : defaultColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: h5(
+                              MyProfileData.hasFavorite(name)
+                                  ? "Remove from Favorites"
+                                  : "Add to Favorites",
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () async {
+                          pop(context);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          width: widthSizer(context),
+                          decoration: BoxDecoration(
+                            color: cColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(child: h5("Close")),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                    ],
                   ),
-                ],
+                ),
               ),
-            );
-          },
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        CryptoWidget.showDetailDialog(
+          context,
+          photo: photo,
+          name: name,
+          details: details,
+          website: website,
         );
       },
       child: Container(

@@ -1,3 +1,4 @@
+import 'package:airdrop/services/admin.dart';
 import 'package:airdrop/widget/image.dart';
 import 'package:flutter/material.dart';
 
@@ -5,10 +6,17 @@ import 'package:flutter/material.dart';
 // kripto paralarını göstermek için kompakt, renkli ve hafif "glow"
 // efektli bir rozet (chip). CryptoWidget tam boy bir kart olduğu için
 // burada onun yerine bu hafif versiyon kullanılıyor - taşma olmuyor.
+// Tıklanınca CryptoWidget ile aynı detay penceresi açılır.
 class MatchCryptoChip extends StatelessWidget {
   final String photo;
   final String name;
-  const MatchCryptoChip({super.key, required this.photo, required this.name});
+  final String details;
+  const MatchCryptoChip({
+    super.key,
+    required this.photo,
+    required this.name,
+    this.details = "",
+  });
 
   // İsme göre sabit ama farklı bir renk üretir, her coin kendine
   // özgü bir tonda görünsün diye.
@@ -29,7 +37,16 @@ class MatchCryptoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _accentColor();
-    return Container(
+    return GestureDetector(
+      onTap: () {
+        CryptoWidget.showDetailDialog(
+          context,
+          photo: photo,
+          name: name,
+          details: details,
+        );
+      },
+      child: Container(
       width: 72,
       margin: const EdgeInsets.symmetric(horizontal: 4),
       child: Column(
@@ -71,6 +88,7 @@ class MatchCryptoChip extends StatelessWidget {
             style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
         ],
+      ),
       ),
     );
   }

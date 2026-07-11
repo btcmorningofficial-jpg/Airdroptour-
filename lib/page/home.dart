@@ -6,6 +6,7 @@ import 'package:airdrop/services/post.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/tools/navigator.dart';
+import 'package:airdrop/widget/auto_scroll_crypto_row.dart';
 import 'package:airdrop/widget/bottom.dart';
 import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/match_crypto_chip.dart';
@@ -107,8 +108,7 @@ class _HomePageState extends State<HomePage> {
                                       Row(
                                         children: [
                                           Expanded(
-                                            child: CosmosScroller(
-                                              scrollDirection: Axis.horizontal,
+                                            child: AutoScrollCryptoRow(
                                               children: AdminServices
                                                   .criptoHomeList
                                                   .value,
@@ -152,6 +152,7 @@ class _HomePageState extends State<HomePage> {
                             MatchCryptoChip(
                               photo: cE["image"],
                               name: cE["name"],
+                              details: cE["details"] ?? "",
                             ),
                           );
                         }
