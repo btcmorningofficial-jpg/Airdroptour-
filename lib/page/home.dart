@@ -8,6 +8,7 @@ import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/tools/navigator.dart';
 import 'package:airdrop/widget/bottom.dart';
 import 'package:airdrop/widget/image.dart';
+import 'package:airdrop/widget/match_crypto_chip.dart';
 import 'package:airdrop/widget/match_page.dart';
 import 'package:airdrop/widget/sizer.dart';
 import 'package:airdrop/widget/slider.dart';
@@ -148,11 +149,9 @@ class _HomePageState extends State<HomePage> {
                           in (element["value"]["data"]["cripto"] ?? [])) {
                         if (AdminServices.cryptosNames.contains(cE["image"])) {
                           ccryp.add(
-                            CryptoWidget(
-                              id: "id",
+                            MatchCryptoChip(
                               photo: cE["image"],
                               name: cE["name"],
-                              details: cE["details"],
                             ),
                           );
                         }
