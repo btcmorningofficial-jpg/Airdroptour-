@@ -150,6 +150,48 @@ class ByBugAuth {
     }
   }
 
+  static Future<List<dynamic>> forgotPassword(String email) async {
+    try {
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/auth/forgot_password.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, j['message'] ?? 'ok'];
+      }
+      return [0, j['message'] ?? 'Something went wrong'];
+    } catch (e) {
+      return [0, 'Could not connect to server'];
+    }
+  }
+
+  static Future<List<dynamic>> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    try {
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/auth/reset_password.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'code': code,
+          'new_password': newPassword,
+        }),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, 'ok'];
+      }
+      return [0, j['message'] ?? 'Could not reset password'];
+    } catch (e) {
+      return [0, 'Could not connect to server'];
+    }
+  }
+
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);

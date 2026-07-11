@@ -1,3 +1,4 @@
+import 'package:airdrop/page/forgot_password.dart';
 import 'package:airdrop/page/register.dart';
 import 'package:airdrop/services/auth.dart';
 import 'package:airdrop/theme/color.dart';
@@ -30,6 +31,16 @@ class LoginPage extends StatelessWidget {
               textController: Auth.password,
               keyboardType: TextInputType.visiblePassword,
               obscureText: true,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: GestureDetector(
+                  onTap: () => push(context, ForgotPasswordPage()),
+                  child: subP("Forgot Password?"),
+                ),
+              ),
             ),
             SizedBox(height: 10),
             subP("By logging in you agree to our policies."),
