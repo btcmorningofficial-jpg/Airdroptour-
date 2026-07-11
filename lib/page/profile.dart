@@ -1,3 +1,4 @@
+import 'package:airdrop/widget/snack.dart';
 import 'package:airdrop/page/add_rain.dart';
 import 'package:airdrop/page/admin/admin.dart';
 import 'package:airdrop/page/contact.dart';
