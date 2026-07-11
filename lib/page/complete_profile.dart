@@ -25,6 +25,8 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
   final ValueNotifier<List<Map<String, dynamic>>> availableCryptos =
       ValueNotifier([]);
   final ValueNotifier<List<String>> selectedCryptos = ValueNotifier([]);
+  final TextEditingController searchController = TextEditingController();
+  final ValueNotifier<String> searchQuery = ValueNotifier("");
   bool loading = false;
   bool loadingCryptos = true;
 
@@ -129,6 +131,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
               genderController,
               availableCryptos,
               selectedCryptos,
+              searchQuery,
             ]),
             builder: (context, child) {
               return SingleChildScrollView(
@@ -194,6 +197,36 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                       "Select At Least 3 Cryptocurrencies (${selectedCryptos.value.length}/3)",
                     ),
                     SizedBox(height: 12),
+                    if (!loadingCryptos && availableCryptos.value.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: TextField(
+                          controller: searchController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: "Search cryptocurrency...",
+                            hintStyle: const TextStyle(color: Colors.white54),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.white54,
+                            ),
+                            filled: true,
+                            fillColor: navColor,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 0,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onChanged: (v) {
+                            searchQuery.value = v.trim().toLowerCase();
+                            searchQuery.notifyListeners();
+                          },
+                        ),
+                      ),
+                    SizedBox(height: 12),
                     if (loadingCryptos)
                       Padding(
                         padding: const EdgeInsets.all(20),
@@ -207,44 +240,68 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
                         ),
                       )
                     else
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          alignment: WrapAlignment.center,
-                          children: availableCryptos.value.map((c) {
-                            final name = c["name"] ?? "";
-                            final selected = selectedCryptos.value.contains(
-                              name,
-                            );
-                            return GestureDetector(
-                              onTap: () {
-                                List<String> temp = List<String>.from(
-                                  selectedCryptos.value,
-                                );
-                                if (selected) {
-                                  temp.remove(name);
-                                } else {
-                                  temp.add(name);
-                                }
-                                selectedCryptos.value = temp;
-                                selectedCryptos.notifyListeners();
-                              },
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: selected ? defaultColor : navColor,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: h5(name),
+                      Builder(
+                        builder: (context) {
+                          final filtered = availableCryptos.value.where((c) {
+                            final name = (c["name"] ?? "")
+                                .toString()
+                                .toLowerCase();
+                            return searchQuery.value.isEmpty ||
+                                name.contains(searchQuery.value);
+                          }).toList();
+
+                          if (filtered.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
                               ),
+                              child: subP("No matching cryptocurrency found."),
                             );
-                          }).toList(),
-                        ),
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                            ),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              alignment: WrapAlignment.center,
+                              children: filtered.map((c) {
+                                final name = c["name"] ?? "";
+                                final selected = selectedCryptos.value
+                                    .contains(name);
+                                return GestureDetector(
+                                  onTap: () {
+                                    List<String> temp = List<String>.from(
+                                      selectedCryptos.value,
+                                    );
+                                    if (selected) {
+                                      temp.remove(name);
+                                    } else {
+                                      temp.add(name);
+                                    }
+                                    selectedCryptos.value = temp;
+                                    selectedCryptos.notifyListeners();
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: selected
+                                          ? defaultColor
+                                          : navColor,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: h5(name),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
                       ),
                     SizedBox(height: 32),
 
