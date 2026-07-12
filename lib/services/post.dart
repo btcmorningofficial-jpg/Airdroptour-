@@ -149,19 +149,42 @@ class Post extends ChangeNotifier {
 }
 
 extension PostReactions on Post {
-  static Future<void> like(String tag) async {
-    await ByBugDatabase.add("reaction", "${tag}_${MyProfileData.uid()}_like", {
-      "tag": tag,
-      "uid": MyProfileData.uid(),
-      "type": "like",
-    });
+  static Future<Map<String, dynamic>> getReactionData(String tag) async {
+    var all = await ByBugDatabase.getAll("reaction");
+    int likes = 0;
+    int dislikes = 0;
+    String? myReaction;
+    String myUid = MyProfileData.uid();
+    for (var element in all) {
+      Map<String, dynamic> val = element["value"];
+      if (val["tag"] != tag) continue;
+      if (val["type"] == "like") likes++;
+      if (val["type"] == "dislike") dislikes++;
+      if (val["uid"] == myUid) myReaction = val["type"];
+    }
+    return {"likes": likes, "dislikes": dislikes, "myReaction": myReaction};
   }
 
-  static Future<void> dislike(String tag) async {
-    await ByBugDatabase.add("reaction", "${tag}_${MyProfileData.uid()}_dislike", {
-      "tag": tag,
-      "uid": MyProfileData.uid(),
-      "type": "dislike",
-    });
+  static Future<String?> toggleReaction(String tag, String type) async {
+    String myUid = MyProfileData.uid();
+    String key = "${tag}_$myUid";
+    String? currentType;
+    try {
+      var current = await ByBugDatabase.get("reaction", key);
+      currentType = current["value"]?["type"];
+    } catch (_) {
+      currentType = null;
+    }
+    if (currentType == type) {
+      await ByBugDatabase.remove("reaction", key);
+      return null;
+    } else {
+      await ByBugDatabase.add("reaction", key, {
+        "tag": tag,
+        "uid": myUid,
+        "type": type,
+      });
+      return type;
+    }
   }
 }
