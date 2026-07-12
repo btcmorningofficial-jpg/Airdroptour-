@@ -19,6 +19,7 @@ class PostComponent extends StatelessWidget {
   final String uid;
   final String tag;
   final bool verify;
+  final bool isAdmin;
   const PostComponent({
     super.key,
     required this.photo,
@@ -28,6 +29,7 @@ class PostComponent extends StatelessWidget {
     required this.uid,
     required this.tag,
     required this.verify,
+    this.isAdmin = false,
   });
 
   @override

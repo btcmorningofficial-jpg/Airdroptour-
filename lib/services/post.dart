@@ -56,7 +56,11 @@ class Post extends ChangeNotifier {
       }
     }
 
-    tempPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    List<PostComponent> adminPosts = tempPosts.where((p) => p.isAdmin).toList();
+    List<PostComponent> normalPosts = tempPosts.where((p) => !p.isAdmin).toList();
+    adminPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    normalPosts.shuffle();
+    tempPosts = [...adminPosts, ...normalPosts];
 
     profilePosts.value = tempPosts;
     profilePosts.notifyListeners();
@@ -90,7 +94,11 @@ class Post extends ChangeNotifier {
       }
     }
 
-    tempPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    List<PostComponent> adminPosts = tempPosts.where((p) => p.isAdmin).toList();
+    List<PostComponent> normalPosts = tempPosts.where((p) => !p.isAdmin).toList();
+    adminPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    normalPosts.shuffle();
+    tempPosts = [...adminPosts, ...normalPosts];
 
     profilePostsYou.value = tempPosts;
     profilePostsYou.notifyListeners();
@@ -118,6 +126,7 @@ class Post extends ChangeNotifier {
         tempPosts.add(
           PostComponent(
             verify: usrData["data"]["verify"] ?? false,
+            isAdmin: usrData["data"]["isAdmin"] ?? false,
             tag: element["tag"],
             uid: val["uid"],
             dateTime: DateTime.parse(val["create_at"]),
@@ -128,7 +137,11 @@ class Post extends ChangeNotifier {
         );
       }
     }
-    tempPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    List<PostComponent> adminPosts = tempPosts.where((p) => p.isAdmin).toList();
+    List<PostComponent> normalPosts = tempPosts.where((p) => !p.isAdmin).toList();
+    adminPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    normalPosts.shuffle();
+    tempPosts = [...adminPosts, ...normalPosts];
 
     postsW.value = tempPosts;
     postsW.notifyListeners();
