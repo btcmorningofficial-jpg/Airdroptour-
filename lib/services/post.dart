@@ -15,7 +15,10 @@ class Post extends ChangeNotifier {
       "create_at": DateTime.now().toString(),
     });
     postController.clear();
-    await getProfilePosts(MyProfileData.uid());
+    await Future.wait([
+      getProfilePosts(MyProfileData.uid()),
+      getPosts(),
+    ]);
   }
 
   static Future<void> remove(String tag) async {
