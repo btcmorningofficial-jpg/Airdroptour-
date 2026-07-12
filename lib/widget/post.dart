@@ -128,6 +128,20 @@ class PostComponent extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Row(children: [Expanded(child: p(text))]),
+        SizedBox(height: 8),
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () => PostReactions.like(tag),
+              child: Icon(Icons.thumb_up_outlined, color: textColor.withOpacity(0.6), size: 18),
+            ),
+            SizedBox(width: 16),
+            GestureDetector(
+              onTap: () => PostReactions.dislike(tag),
+              child: Icon(Icons.thumb_down_outlined, color: textColor.withOpacity(0.6), size: 18),
+            ),
+          ],
+        ),
           SizedBox(height: 12),
         ],
       ),

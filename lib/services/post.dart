@@ -147,3 +147,21 @@ class Post extends ChangeNotifier {
     postsW.notifyListeners();
   }
 }
+
+extension PostReactions on Post {
+  static Future<void> like(String tag) async {
+    await ByBugDatabase.add("reaction", "${tag}_${MyProfileData.uid()}_like", {
+      "tag": tag,
+      "uid": MyProfileData.uid(),
+      "type": "like",
+    });
+  }
+
+  static Future<void> dislike(String tag) async {
+    await ByBugDatabase.add("reaction", "${tag}_${MyProfileData.uid()}_dislike", {
+      "tag": tag,
+      "uid": MyProfileData.uid(),
+      "type": "dislike",
+    });
+  }
+}
