@@ -102,7 +102,6 @@ class MyProfileData extends ChangeNotifier {
     String? status,
     String? photo,
     String? bio,
-    String? gender,
     bool? verify,
     bool? isAdmin,
     Map<String, dynamic>? social,
@@ -116,7 +115,6 @@ class MyProfileData extends ChangeNotifier {
     if (photo != null) datas["value"]["photo"] = photo;
     if (name != null) datas["value"]["name"] = name;
     if (bio != null) datas["value"]["data"]["bio"] = bio;
-    if (gender != null) datas["value"]["data"]["gender"] = gender;
     if (verify != null) datas["value"]["data"]["verify"] = verify;
     if (status != null) datas["value"]["data"]["status"] = status;
     if (isAdmin != null) datas["value"]["data"]["isAdmin"] = isAdmin;
