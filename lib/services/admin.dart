@@ -822,31 +822,6 @@ class CryptoWidget extends StatelessWidget {
                                 ),
                               ),
                             ),
-
-                          SizedBox(height: 10),
-                          GestureDetector(
-                            onTap: () async {
-                              final uri = Uri.tryParse(website);
-                              if (uri != null) {
-                                await launchUrl(
-                                  uri,
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              }
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              width: widthSizer(context),
-                              decoration: BoxDecoration(
-                                color: cColor,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Center(
-                                child: h5("Visit Official Website"),
-                              ),
-                            ),
-                          ),
-                        ),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
