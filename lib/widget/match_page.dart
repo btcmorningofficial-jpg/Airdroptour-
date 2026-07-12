@@ -130,7 +130,7 @@ class _MatchPageState extends State<MatchPage> {
                     Flexible(child: h3(widget.name, overflow: TextOverflow.ellipsis)),
                     if (widget.verify) ...[
                       const SizedBox(width: 4),
-                      const Icon(Icons.verified, color: textColor, size: 16),
+                      Icon(Icons.verified, color: textColor, size: 16),
                     ],
                   ],
                 ),
