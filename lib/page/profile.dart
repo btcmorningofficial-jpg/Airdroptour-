@@ -451,6 +451,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               ],
                             ),
                             Column(children: profilePosts.value),
+                            SizedBox(height: 66),
                           ],
                         ),
                       ),
