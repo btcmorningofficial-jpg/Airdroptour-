@@ -544,7 +544,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ],
                             ),
-                            Column(children: profilePosts.value),
+                            Column(children: profilePosts.value), const SizedBox(height: 100),
                           ],
                         ),
                       ),
