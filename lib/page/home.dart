@@ -164,6 +164,7 @@ class _HomePageState extends State<HomePage> {
                           bio: element["value"]["data"]["bio"],
                           uid: element["value"]["uid"],
                           photo: element["value"]["photo"],
+            verify: element["value"]["data"]["verify"] ?? false,
                         ),
                       );
                     }

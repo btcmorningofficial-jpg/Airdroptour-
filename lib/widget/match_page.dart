@@ -18,6 +18,7 @@ class MatchPage extends StatefulWidget {
   final String uid;
   final String photo;
   final List<Widget> matchCrypto;
+  final bool verify;
   const MatchPage({
     super.key,
     required this.name,
@@ -25,6 +26,7 @@ class MatchPage extends StatefulWidget {
     required this.uid,
     required this.photo,
     required this.matchCrypto,
+    required this.verify,
   });
 
   @override
@@ -122,7 +124,16 @@ class _MatchPageState extends State<MatchPage> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          h3(widget.name),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(child: h3(widget.name, overflow: TextOverflow.ellipsis)),
+                    if (widget.verify) ...[
+                      const SizedBox(width: 4),
+                      const Icon(Icons.verified, color: textColor, size: 16),
+                    ],
+                  ],
+                ),
                           p(
                             widget.bio,
                             maxLines: 3,
