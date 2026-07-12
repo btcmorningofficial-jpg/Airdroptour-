@@ -1,7 +1,9 @@
+import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/sizer.dart';
+import 'package:airdrop/widget/snack.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +36,7 @@ class _AdminUserComponentState extends State<AdminUserComponent> {
   ValueNotifier<bool> premiumValue = ValueNotifier(false);
   ValueNotifier<bool> adminValue = ValueNotifier(false);
   ValueNotifier<String> statusValue = ValueNotifier("active");
+  bool _deleted = false;
   @override
   void initState() {
     super.initState();
@@ -44,6 +47,9 @@ class _AdminUserComponentState extends State<AdminUserComponent> {
 
   @override
   Widget build(BuildContext context) {
+    if (_deleted) {
+      return const SizedBox.shrink();
+    }
     return ListenableBuilder(
       listenable: Listenable.merge([premiumValue, adminValue, statusValue]),
       builder: (context, child) {
@@ -298,6 +304,74 @@ class _AdminUserComponentState extends State<AdminUserComponent> {
                       Icon(Icons.refresh_rounded, color: textColor),
                     ],
                   ),
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: navColor,
+                    title: bold("Delete User"),
+                    content: p(
+                      "${widget.name} (${widget.email}) will be permanently deleted, including their login credentials. This action cannot be undone. Are you sure?",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: p("Cancel"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: bold("Delete"),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  try {
+                    var x = await ByBugAuth.deleteUser(widget.uid);
+                    if (x[0] == 1) {
+                      if (mounted) {
+                        setState(() {
+                          _deleted = true;
+                        });
+                      }
+                    } else {
+                      if (context.mounted) {
+                        getErrorSnack(context, x[1]);
+                      }
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      getErrorSnack(context, "Delete failed: $e");
+                    }
+                  }
+                }
+              },
+              child: Container(
+                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.all(10),
+                width: widthSizer(context),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.red.withOpacity(0.15),
+                  border: Border.all(color: Colors.red),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.delete_forever, color: Colors.red, size: 18),
+                    SizedBox(width: 6),
+                    const Text(
+                      "Delete User",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

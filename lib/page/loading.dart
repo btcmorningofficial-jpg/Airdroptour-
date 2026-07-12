@@ -1,3 +1,4 @@
+import 'package:airdrop/page/complete_profile.dart';
 import 'package:airdrop/page/home.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
@@ -23,7 +24,11 @@ class _LoadingPageState extends State<LoadingPage> {
       if (MyProfileData.status() == "active") {
         await Future.delayed(Durations.extralong4);
         if (!mounted) return;
-        push(context, HomePage());
+        if (!MyProfileData.profileCompleted()) {
+          push(context, CompleteProfilePage());
+        } else {
+          push(context, HomePage());
+        }
       } else if (MyProfileData.status() == "deactive") {
         if (!mounted) return;
         CosmosAlert.showIOSStyleAlert(

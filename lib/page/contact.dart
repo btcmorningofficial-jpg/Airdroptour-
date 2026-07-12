@@ -68,7 +68,7 @@ class Contact extends StatelessWidget {
                                         "Email Address",
                                         () {
                                           openUrl(
-                                            "mailto:airdropotour@gmail.com",
+                                            "mailto:airdroptour@gmail.com",
                                           );
                                         },
                                       ),

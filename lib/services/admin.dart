@@ -24,6 +24,10 @@ class AdminServices extends ChangeNotifier {
   static ValueNotifier<Map<String, dynamic>> adsVal = ValueNotifier({});
   static ValueNotifier<List<Widget>> criptoHomeList = ValueNotifier([]);
   static ValueNotifier<List<Widget>> criptoExplorerList = ValueNotifier([]);
+  static ValueNotifier<List<Widget>> exchangeLinksAdminList = ValueNotifier(
+    [],
+  );
+  static Map<String, String> exchangeLinksDynamic = {};
 
   static final ValueNotifier<List<Widget>> criptoExplorerListFiltered =
       ValueNotifier([]);
@@ -31,20 +35,30 @@ class AdminServices extends ChangeNotifier {
 
   static Future<void> getUsers() async {
     var usrs = await ByBugDatabase.getAll(bucket);
-    adminUserList.value.clear();
+    List<Widget> temp = [];
     for (var element in usrs) {
-      adminUserList.value.add(
-        AdminUserComponent(
-          isAdmin: element["value"]["data"]["isAdmin"] ?? false,
-          verify: element["value"]["data"]["verify"] ?? false,
-          status: element["value"]["data"]["status"] ?? "active",
-          photo: element["value"]["photo"],
-          name: element["value"]["name"],
-          email: element["value"]["email"],
-          uid: element["value"]["uid"],
-        ),
-      );
+      try {
+        final Map<String, dynamic> value =
+            Map<String, dynamic>.from(element["value"] ?? {});
+        final Map<String, dynamic> data =
+            Map<String, dynamic>.from(value["data"] ?? {});
+        temp.add(
+          AdminUserComponent(
+            isAdmin: data["isAdmin"] ?? false,
+            verify: data["verify"] ?? false,
+            status: data["status"] ?? "active",
+            photo: value["photo"] ?? "",
+            name: value["name"] ?? "",
+            email: value["email"] ?? "",
+            uid: value["uid"] ?? element["tag"] ?? "",
+          ),
+        );
+      } catch (_) {
+        // Bozuk/eksik kayıt varsa atla, listenin tamamını çökertme.
+        continue;
+      }
     }
+    adminUserList.value = temp;
     adminUserList.notifyListeners();
   }
 
@@ -245,6 +259,8 @@ class AdminServices extends ChangeNotifier {
 
   static List<String> cryptosNames = [];
   static Future<void> getHomeCryptos(BuildContext context) async {
+    // Borsa linklerini arka planda yükle (kart açıldığında hazır olsun).
+    getExchangeLinks(context);
     var crypto = await ByBugDatabase.getAll("crypto");
     cryptosNames.clear();
     List<Widget> tempCrypto = [];
@@ -558,6 +574,151 @@ class AdminServices extends ChangeNotifier {
       },
     );
   }
+
+  // ---- Borsa Linkleri (Exchange Links) ----
+
+  static Future<void> addExchangeLinkDB(String name, String url) async {
+    await ByBugDatabase.add("exchange_links", CosmosRandom.randomTag(), {
+      "name": name,
+      "url": url,
+      "create_at": DateTime.now().toString(),
+    });
+  }
+
+  static Future<void> getExchangeLinks(BuildContext context) async {
+    var links = await ByBugDatabase.getAll("exchange_links");
+    List<Widget> temp = [];
+    Map<String, String> tempMap = {};
+
+    for (var element in links) {
+      Map<String, dynamic> val = element["value"] ?? {};
+      final String name = val["name"] ?? "";
+      final String url = val["url"] ?? "";
+      if (name.isEmpty || url.isEmpty) continue;
+      tempMap[name] = url;
+
+      temp.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    bold(name),
+                    p(url, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  await ByBugDatabase.remove("exchange_links", element["tag"]);
+                  if (!context.mounted) return;
+                  getSuccessSnack(context, "Exchange link deleted.");
+                  await getExchangeLinks(context);
+                },
+                child: Icon(Icons.delete_forever, color: Colors.red),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    exchangeLinksDynamic = tempMap;
+    exchangeLinksAdminList.value = temp;
+    exchangeLinksAdminList.notifyListeners();
+  }
+
+  static void addExchangeLink(BuildContext context) {
+    TextEditingController nameCtrl = TextEditingController();
+    TextEditingController urlCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              GestureDetector(
+                onTap: () => pop(context),
+                child: Container(
+                  width: width(context),
+                  height: height(context),
+                  color: Colors.transparent,
+                ),
+              ),
+              Center(
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  width: widthSizer(context) * 0.9,
+                  decoration: BoxDecoration(
+                    color: navColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 10),
+                      h3("Exchange Links", color: defaultColor),
+                      p("Add New Exchange Link"),
+                      SizedBox(height: 20),
+                      textfield(
+                        text: "Exchange Name (e.g. Binance)",
+                        textController: nameCtrl,
+                        keyboardType: TextInputType.name,
+                        maxLines: 1,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(60),
+                        ],
+                      ),
+                      textfield(
+                        text: "Link (https://...)",
+                        textController: urlCtrl,
+                        keyboardType: TextInputType.url,
+                        maxLines: 1,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(500),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () async {
+                          if (nameCtrl.text.trim().isEmpty ||
+                              urlCtrl.text.trim().isEmpty) {
+                            return;
+                          }
+                          await addExchangeLinkDB(
+                            nameCtrl.text.trim(),
+                            urlCtrl.text.trim(),
+                          );
+                          if (!context.mounted) return;
+                          pop(context);
+                          getSuccessSnack(context, "Exchange Link Added");
+                          await getExchangeLinks(context);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          width: widthSizer(context),
+                          decoration: BoxDecoration(
+                            color: defaultColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(child: h5("Publish")),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class CryptoWidget extends StatelessWidget {
@@ -577,8 +738,7 @@ class CryptoWidget extends StatelessWidget {
     this.readOnly,
   });
 
-  static const Map<String, String> exchangeLinks = {
-    "LBank": "https://www.lbkpro.net/ref/F694",
+  static const Map<String, String> _defaultExchangeLinks = {
     "Binance":
         "https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00V117EBZL",
     "MEXC": "https://promote.mexc.com/r/gJvZH1E5tf",
@@ -586,42 +746,55 @@ class CryptoWidget extends StatelessWidget {
         "https://www.gate.com/referral/earn-together/invite/UlFDVwpZ?ref=UlFDVwpZ&ref_type=103&utm_cmp=rXJBDjtJ&activity_id=1781161013843",
     "KuCoin":
         "https://www.kucoin.com/ucenter/signup?rcode=CX87A4A7&utm_source=app_g_Share",
+    "LBank": "https://www.lbkpro.net/ref/F694",
   };
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return Scaffold(
-              backgroundColor: Colors.transparent,
-              body: Stack(
-                children: [
-                  GestureDetector(
-                    onTap: () => pop(context),
-                    child: Container(
-                      width: width(context),
-                      height: height(context),
-                      color: Colors.transparent,
-                    ),
+  // Admin panelden eklenen linkler varsa onları kullan, yoksa varsayılanları göster.
+  static Map<String, String> get exchangeLinks =>
+      AdminServices.exchangeLinksDynamic.isNotEmpty
+      ? AdminServices.exchangeLinksDynamic
+      : _defaultExchangeLinks;
+
+  // Detay penceresini paylaşılan (static) bir fonksiyon olarak dışarı
+  // veriyoruz ki hem CryptoWidget hem de MatchCryptoChip (match kartındaki
+  // kompakt rozetler) aynı pencereyi açabilsin.
+  static void showDetailDialog(
+    BuildContext context, {
+    required String photo,
+    required String name,
+    required String details,
+    String? website,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              GestureDetector(
+                onTap: () => pop(context),
+                child: Container(
+                  width: width(context),
+                  height: height(context),
+                  color: Colors.transparent,
+                ),
+              ),
+              Center(
+                child: Container(
+                  height: height(context) * 0.5,
+                  padding: EdgeInsets.all(8),
+                  width: widthSizer(context) * 0.9,
+                  decoration: BoxDecoration(
+                    color: navColor,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  Center(
-                    child: Container(
-                      height: height(context) * 0.5,
-                      padding: EdgeInsets.all(8),
-                      width: widthSizer(context) * 0.9,
-                      decoration: BoxDecoration(
-                        color: navColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 10),
-                          h5(name),
-                          Expanded(child: markdownText(details)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 10),
+                      h5(name),
+                      Expanded(child: markdownText(details)),
 
                           if (website != null && website!.isNotEmpty)
                             Padding(
@@ -653,41 +826,13 @@ class CryptoWidget extends StatelessWidget {
                           SizedBox(height: 10),
                           GestureDetector(
                             onTap: () async {
-                              if (MyProfileData.hasFavorite(name)) {
-                                MyProfileData.removeFavorite(name);
-                              } else {
-                                await MyProfileData.addFavorite(
-                                  photo,
-                                  details,
-                                  name,
+                              final uri = Uri.tryParse(website);
+                              if (uri != null) {
+                                await launchUrl(
+                                  uri,
+                                  mode: LaunchMode.externalApplication,
                                 );
                               }
-
-                              if (!context.mounted) return;
-                              pop(context);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(8),
-                              width: widthSizer(context),
-                              decoration: BoxDecoration(
-                                color: MyProfileData.hasFavorite(name)
-                                    ? Colors.red
-                                    : defaultColor,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Center(
-                                child: h5(
-                                  MyProfileData.hasFavorite(name)
-                                      ? "Remove from Favorites"
-                                      : "Add to Favorites",
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          GestureDetector(
-                            onTap: () async {
-                              pop(context);
                             },
                             child: Container(
                               padding: EdgeInsets.all(8),
@@ -696,18 +841,115 @@ class CryptoWidget extends StatelessWidget {
                                 color: cColor,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: Center(child: h5("Close")),
+                              child: Center(
+                                child: h5("Visit Official Website"),
+                              ),
                             ),
                           ),
-                          SizedBox(height: 10),
-                        ],
+                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: CryptoWidget.exchangeLinks.entries.map((
+                          entry,
+                        ) {
+                          return GestureDetector(
+                            onTap: () async {
+                              final uri = Uri.tryParse(entry.value);
+                              if (uri != null) {
+                                await launchUrl(
+                                  uri,
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
+                            },
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: defaultColor,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: h5(entry.key),
+                            ),
+                          );
+                        }).toList(),
                       ),
-                    ),
+
+                      SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () async {
+                          if (MyProfileData.hasFavorite(name)) {
+                            MyProfileData.removeFavorite(name);
+                          } else {
+                            await MyProfileData.addFavorite(
+                              photo,
+                              details,
+                              name,
+                            );
+                          }
+
+                          if (!context.mounted) return;
+                          pop(context);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          width: widthSizer(context),
+                          decoration: BoxDecoration(
+                            color: MyProfileData.hasFavorite(name)
+                                ? Colors.red
+                                : defaultColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: h5(
+                              MyProfileData.hasFavorite(name)
+                                  ? "Remove from Favorites"
+                                  : "Add to Favorites",
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () async {
+                          pop(context);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          width: widthSizer(context),
+                          decoration: BoxDecoration(
+                            color: cColor,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(child: h5("Close")),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                    ],
                   ),
-                ],
+                ),
               ),
-            );
-          },
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        CryptoWidget.showDetailDialog(
+          context,
+          photo: photo,
+          name: name,
+          details: details,
+          website: website,
         );
       },
       child: Container(

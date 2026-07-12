@@ -15,7 +15,10 @@ class Post extends ChangeNotifier {
       "create_at": DateTime.now().toString(),
     });
     postController.clear();
-    await getProfilePosts(MyProfileData.uid());
+    await Future.wait([
+      getProfilePosts(MyProfileData.uid()),
+      getPosts(),
+    ]);
   }
 
   static Future<void> remove(String tag) async {
@@ -53,7 +56,11 @@ class Post extends ChangeNotifier {
       }
     }
 
-    tempPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    List<PostComponent> adminPosts = tempPosts.where((p) => p.isAdmin).toList();
+    List<PostComponent> normalPosts = tempPosts.where((p) => !p.isAdmin).toList();
+    adminPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    normalPosts.shuffle();
+    tempPosts = [...adminPosts, ...normalPosts];
 
     profilePosts.value = tempPosts;
     profilePosts.notifyListeners();
@@ -87,7 +94,11 @@ class Post extends ChangeNotifier {
       }
     }
 
-    tempPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    List<PostComponent> adminPosts = tempPosts.where((p) => p.isAdmin).toList();
+    List<PostComponent> normalPosts = tempPosts.where((p) => !p.isAdmin).toList();
+    adminPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    normalPosts.shuffle();
+    tempPosts = [...adminPosts, ...normalPosts];
 
     profilePostsYou.value = tempPosts;
     profilePostsYou.notifyListeners();
@@ -115,6 +126,7 @@ class Post extends ChangeNotifier {
         tempPosts.add(
           PostComponent(
             verify: usrData["data"]["verify"] ?? false,
+            isAdmin: usrData["data"]["isAdmin"] ?? false,
             tag: element["tag"],
             uid: val["uid"],
             dateTime: DateTime.parse(val["create_at"]),
@@ -125,9 +137,54 @@ class Post extends ChangeNotifier {
         );
       }
     }
-    tempPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    List<PostComponent> adminPosts = tempPosts.where((p) => p.isAdmin).toList();
+    List<PostComponent> normalPosts = tempPosts.where((p) => !p.isAdmin).toList();
+    adminPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    normalPosts.shuffle();
+    tempPosts = [...adminPosts, ...normalPosts];
 
     postsW.value = tempPosts;
     postsW.notifyListeners();
+  }
+}
+
+extension PostReactions on Post {
+  static Future<Map<String, dynamic>> getReactionData(String tag) async {
+    var all = await ByBugDatabase.getAll("reaction");
+    int likes = 0;
+    int dislikes = 0;
+    String? myReaction;
+    String myUid = MyProfileData.uid();
+    for (var element in all) {
+      Map<String, dynamic> val = element["value"];
+      if (val["tag"] != tag) continue;
+      if (val["type"] == "like") likes++;
+      if (val["type"] == "dislike") dislikes++;
+      if (val["uid"] == myUid) myReaction = val["type"];
+    }
+    return {"likes": likes, "dislikes": dislikes, "myReaction": myReaction};
+  }
+
+  static Future<String?> toggleReaction(String tag, String type) async {
+    String myUid = MyProfileData.uid();
+    String key = "${tag}_$myUid";
+    String? currentType;
+    try {
+      var current = await ByBugDatabase.get("reaction", key);
+      currentType = current["value"]?["type"];
+    } catch (_) {
+      currentType = null;
+    }
+    if (currentType == type) {
+      await ByBugDatabase.remove("reaction", key);
+      return null;
+    } else {
+      await ByBugDatabase.add("reaction", key, {
+        "tag": tag,
+        "uid": myUid,
+        "type": type,
+      });
+      return type;
+    }
   }
 }

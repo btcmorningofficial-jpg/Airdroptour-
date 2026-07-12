@@ -11,7 +11,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ByBugDB {
@@ -30,11 +29,6 @@ class ByBugDB {
 class ByBugAuth {
   static const _tokenKey = 'bb_auth_token';
   static const _uidKey = 'bb_auth_uid';
-
-  // Google Cloud Console'da oluşturduğun "Web application" tipi
-  // OAuth Client ID'yi buraya yapıştır (backend'deki GOOGLE_CLIENT_ID ile AYNI olmalı)
-  static const String googleServerClientId =
-      "594788456822-bvns86b28o976gb2ljknencg8hk3qgr6.apps.googleusercontent.com";
 
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -103,21 +97,10 @@ class ByBugAuth {
     }
   }
 
-  static Future<List<dynamic>> googleSignIn() async {
+  static Future<List<dynamic>> loginWithGoogle(String idToken) async {
     try {
-      final googleSignIn = GoogleSignIn(serverClientId: googleServerClientId);
-      final account = await googleSignIn.signIn();
-      if (account == null) {
-        return [0, 'Sign in cancelled'];
-      }
-      final auth = await account.authentication;
-      final idToken = auth.idToken;
-      if (idToken == null) {
-        return [0, 'Could not get Google token'];
-      }
-
       final resp = await http.post(
-        Uri.parse('${ByBugDB.apiBaseUrl}/auth/google.php'),
+        Uri.parse('${ByBugDB.apiBaseUrl}/auth/google_login.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'id_token': idToken}),
       );
@@ -126,7 +109,84 @@ class ByBugAuth {
         await _saveSession(j['token'], j['uid']);
         return [1, 'ok'];
       }
-      return [0, j['message'] ?? 'Google sign-in failed'];
+      return [0, j['message'] ?? 'Google login failed'];
+    } catch (e) {
+      return [0, 'Could not connect to server'];
+    }
+  }
+
+  static Future<List<dynamic>> deleteUser(String targetUid) async {
+    try {
+      final headers = await _authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/auth/delete_user.php'),
+        headers: headers,
+        body: jsonEncode({'uid': targetUid}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, 'ok'];
+      }
+      return [0, j['message'] ?? 'Could not delete user'];
+    } catch (e) {
+      return [0, 'Could not connect to server'];
+    }
+  }
+
+  static Future<List<dynamic>> deleteSelf() async {
+    try {
+      final headers = await _authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/auth/delete_self.php'),
+        headers: headers,
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, 'ok'];
+      }
+      return [0, j['message'] ?? 'Could not delete account'];
+    } catch (e) {
+      return [0, 'Could not connect to server'];
+    }
+  }
+
+  static Future<List<dynamic>> forgotPassword(String email) async {
+    try {
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/auth/forgot_password.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, j['message'] ?? 'ok'];
+      }
+      return [0, j['message'] ?? 'Something went wrong'];
+    } catch (e) {
+      return [0, 'Could not connect to server'];
+    }
+  }
+
+  static Future<List<dynamic>> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    try {
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/auth/reset_password.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'code': code,
+          'new_password': newPassword,
+        }),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, 'ok'];
+      }
+      return [0, j['message'] ?? 'Could not reset password'];
     } catch (e) {
       return [0, 'Could not connect to server'];
     }

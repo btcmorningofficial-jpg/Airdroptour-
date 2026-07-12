@@ -1,3 +1,4 @@
+import 'package:airdrop/widget/snack.dart';
 import 'package:airdrop/page/add_rain.dart';
 import 'package:airdrop/page/admin/admin.dart';
 import 'package:airdrop/page/contact.dart';
@@ -8,6 +9,7 @@ import 'package:airdrop/services/post.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/tools/navigator.dart';
+import 'package:airdrop/widget/auto_scroll_crypto_row.dart';
 import 'package:airdrop/widget/bottom.dart';
 import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/post.dart';
@@ -436,6 +438,99 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ),
                             ),
+                            SizedBox(height: 4),
+                            GestureDetector(
+                              onTap: () async {
+                                final confirm1 = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: navColor,
+                                    title: bold("Delete Account"),
+                                    content: p(
+                                      "This will permanently delete your account, profile, and login credentials. This action cannot be undone.",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: p("Cancel"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: bold("Continue"),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm1 != true) return;
+                                if (!context.mounted) return;
+
+                                final confirm2 = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: navColor,
+                                    title: bold("Are you absolutely sure?"),
+                                    content: p(
+                                      "Last chance to cancel. Your account will be gone forever.",
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: p("Cancel"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        child: bold("Delete Forever"),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm2 != true) return;
+
+                                var x = await ByBugAuth.deleteSelf();
+                                if (x[0] == 1) {
+                                  await ByBugAuth.logout();
+                                  if (!context.mounted) return;
+                                  push(context, LoginPage());
+                                } else {
+                                  if (context.mounted) {
+                                    getErrorSnack(context, x[1]);
+                                  }
+                                }
+                              },
+                              child: Container(
+                                margin: EdgeInsets.symmetric(horizontal: 10),
+                                padding: EdgeInsets.all(10),
+                                width: widthSizer(context),
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  border: Border.all(
+                                    color: Colors.red.withOpacity(0.5),
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Delete My Account",
+                                      style: TextStyle(
+                                        color: Colors.red.withOpacity(0.8),
+                                      ),
+                                    ),
+                                    Spacer(),
+                                    Icon(
+                                      Icons.delete_forever,
+                                      color: Colors.red.withOpacity(0.8),
+                                      size: 15,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                             Padding(
                               padding: const EdgeInsets.all(20),
                               child: h3("•", color: textColor.withOpacity(0.5)),
@@ -443,8 +538,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: CosmosScroller(
-                                    scrollDirection: Axis.horizontal,
+                                  child: AutoScrollCryptoRow(
                                     children: profileCrypto.value,
                                   ),
                                 ),

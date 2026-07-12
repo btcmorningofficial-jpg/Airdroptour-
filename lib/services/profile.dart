@@ -64,6 +64,19 @@ class MyProfileData extends ChangeNotifier {
     return data.value["data"]?["bio"] ?? "";
   }
 
+  static String? gender() {
+    return data.value["data"]?["gender"];
+  }
+
+  // Eski kullanıcılar bu alana sahip değil; onlar için varsayılan olarak
+  // "tamamlanmış" say (mevcut kullanıcıları zorunlu ekrana düşürme).
+  // Sadece yeni kayıtlarda auth.dart bunu false olarak set ediyor.
+  static bool profileCompleted() {
+    final v = data.value["data"]?["profileCompleted"];
+    if (v == null) return true;
+    return v == true;
+  }
+
   static Future<void> addFavorite(
     String image,
     String details,
@@ -102,8 +115,10 @@ class MyProfileData extends ChangeNotifier {
     String? status,
     String? photo,
     String? bio,
+    String? gender,
     bool? verify,
     bool? isAdmin,
+    bool? profileCompleted,
     Map<String, dynamic>? social,
     List? follower,
     List? cripto,
@@ -115,9 +130,13 @@ class MyProfileData extends ChangeNotifier {
     if (photo != null) datas["value"]["photo"] = photo;
     if (name != null) datas["value"]["name"] = name;
     if (bio != null) datas["value"]["data"]["bio"] = bio;
+    if (gender != null) datas["value"]["data"]["gender"] = gender;
     if (verify != null) datas["value"]["data"]["verify"] = verify;
     if (status != null) datas["value"]["data"]["status"] = status;
     if (isAdmin != null) datas["value"]["data"]["isAdmin"] = isAdmin;
+    if (profileCompleted != null) {
+      datas["value"]["data"]["profileCompleted"] = profileCompleted;
+    }
     if (social != null) datas["value"]["data"]["social"] = social;
     if (cripto != null) datas["value"]["data"]["cripto"] = cripto;
     await ByBugDatabase.update(bucket, myUID, datas["value"]);

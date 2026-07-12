@@ -6,8 +6,10 @@ import 'package:airdrop/services/post.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/tools/navigator.dart';
+import 'package:airdrop/widget/auto_scroll_crypto_row.dart';
 import 'package:airdrop/widget/bottom.dart';
 import 'package:airdrop/widget/image.dart';
+import 'package:airdrop/widget/match_crypto_chip.dart';
 import 'package:airdrop/widget/match_page.dart';
 import 'package:airdrop/widget/sizer.dart';
 import 'package:airdrop/widget/slider.dart';
@@ -106,8 +108,7 @@ class _HomePageState extends State<HomePage> {
                                       Row(
                                         children: [
                                           Expanded(
-                                            child: CosmosScroller(
-                                              scrollDirection: Axis.horizontal,
+                                            child: AutoScrollCryptoRow(
                                               children: AdminServices
                                                   .criptoHomeList
                                                   .value,
@@ -148,11 +149,10 @@ class _HomePageState extends State<HomePage> {
                           in (element["value"]["data"]["cripto"] ?? [])) {
                         if (AdminServices.cryptosNames.contains(cE["image"])) {
                           ccryp.add(
-                            CryptoWidget(
-                              id: "id",
+                            MatchCryptoChip(
                               photo: cE["image"],
                               name: cE["name"],
-                              details: cE["details"],
+                              details: cE["details"] ?? "",
                             ),
                           );
                         }
@@ -164,6 +164,7 @@ class _HomePageState extends State<HomePage> {
                           bio: element["value"]["data"]["bio"],
                           uid: element["value"]["uid"],
                           photo: element["value"]["photo"],
+            verify: element["value"]["data"]["verify"] ?? false,
                         ),
                       );
                     }

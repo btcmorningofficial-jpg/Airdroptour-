@@ -1,3 +1,4 @@
+import 'package:airdrop/page/forgot_password.dart';
 import 'package:airdrop/page/register.dart';
 import 'package:airdrop/services/auth.dart';
 import 'package:airdrop/theme/color.dart';
@@ -31,6 +32,16 @@ class LoginPage extends StatelessWidget {
               keyboardType: TextInputType.visiblePassword,
               obscureText: true,
             ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 20),
+                child: GestureDetector(
+                  onTap: () => push(context, ForgotPasswordPage()),
+                  child: subP("Forgot Password?"),
+                ),
+              ),
+            ),
             SizedBox(height: 10),
             subP("By logging in you agree to our policies."),
             SizedBox(height: 10),
@@ -45,6 +56,59 @@ class LoginPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(child: h5("Login")),
+              ),
+            ),
+            SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Divider(),
+                  ),
+                ),
+                subP("or"),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Divider(),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => Auth.loginWithGoogle(context),
+              child: Container(
+                padding: EdgeInsets.all(8),
+                margin: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                width: widthSizer(context),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: navColor),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.network(
+                      "https://www.google.com/favicon.ico",
+                      width: 18,
+                      height: 18,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.g_mobiledata, color: Colors.black),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      "Continue with Google",
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             GestureDetector(

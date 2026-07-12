@@ -19,6 +19,7 @@ class PostComponent extends StatelessWidget {
   final String uid;
   final String tag;
   final bool verify;
+  final bool isAdmin;
   const PostComponent({
     super.key,
     required this.photo,
@@ -28,6 +29,7 @@ class PostComponent extends StatelessWidget {
     required this.uid,
     required this.tag,
     required this.verify,
+    this.isAdmin = false,
   });
 
   @override
@@ -126,9 +128,103 @@ class PostComponent extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Row(children: [Expanded(child: p(text))]),
+        SizedBox(height: 8),
+        _PostReactionRow(tag: tag),
           SizedBox(height: 12),
         ],
       ),
+    );
+  }
+}
+
+
+class _PostReactionRow extends StatefulWidget {
+  final String tag;
+  const _PostReactionRow({required this.tag});
+
+  @override
+  State<_PostReactionRow> createState() => _PostReactionRowState();
+}
+
+class _PostReactionRowState extends State<_PostReactionRow> {
+  int likes = 0;
+  int dislikes = 0;
+  String? myReaction;
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    var data = await PostReactions.getReactionData(widget.tag);
+    if (!mounted) return;
+    setState(() {
+      likes = data["likes"];
+      dislikes = data["dislikes"];
+      myReaction = data["myReaction"];
+      loading = false;
+    });
+  }
+
+  Future<void> _tap(String type) async {
+    String? previous = myReaction;
+    setState(() {
+      if (previous == type) {
+        myReaction = null;
+        if (type == "like") likes--; else dislikes--;
+      } else {
+        if (previous == "like") likes--;
+        if (previous == "dislike") dislikes--;
+        if (type == "like") likes++; else dislikes++;
+        myReaction = type;
+      }
+    });
+    await PostReactions.toggleReaction(widget.tag, type);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => _tap("like"),
+          child: Row(
+            children: [
+              Icon(
+                myReaction == "like" ? Icons.thumb_up : Icons.thumb_up_outlined,
+                color: myReaction == "like" ? textColor : textColor.withOpacity(0.6),
+                size: 18,
+              ),
+              SizedBox(width: 4),
+              Text(
+                "$likes",
+                style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(width: 16),
+        GestureDetector(
+          onTap: () => _tap("dislike"),
+          child: Row(
+            children: [
+              Icon(
+                myReaction == "dislike" ? Icons.thumb_down : Icons.thumb_down_outlined,
+                color: myReaction == "dislike" ? textColor : textColor.withOpacity(0.6),
+                size: 18,
+              ),
+              SizedBox(width: 4),
+              Text(
+                "$dislikes",
+                style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
