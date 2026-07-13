@@ -468,3 +468,20 @@ class ByBugChannel {
     _sseSub = null;
   }
 }
+
+extension ByBugChannelList on ByBugChannel {
+  static Future<List<dynamic>> listChannels() async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.get(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_list.php'),
+        headers: headers,
+      );
+      final decoded = jsonDecode(resp.body);
+      if (decoded is! List) return [0, []];
+      return [1, decoded];
+    } catch (e) {
+      return [0, []];
+    }
+  }
+}
