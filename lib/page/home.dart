@@ -1,3 +1,4 @@
+import 'package:airdrop/page/rain_explorer.dart';
 import 'package:airdrop/page/messages/dm.dart';
 import 'package:airdrop/page/profile.dart';
 import 'package:airdrop/services/admin.dart';
@@ -86,9 +87,9 @@ class _HomePageState extends State<HomePage> {
                               SizedBox(width: 10),
                               GestureDetector(
                                 onTap: () {
-                                  push(context, DMBox());
+                                  push(context, RainExplorerPage());
                                 },
-                                child: Icon(Icons.messenger_outline, size: 26),
+                                child: Icon(Icons.whatshot, size: 26),
                               ),
                               SizedBox(width: 10),
                             ],

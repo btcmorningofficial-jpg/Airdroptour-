@@ -1,3 +1,4 @@
+import 'package:airdrop/page/channels_page.dart';
 import 'package:airdrop/page/add_rain.dart';
 import 'package:airdrop/page/explorer.dart';
 import 'package:airdrop/page/home.dart';
@@ -62,10 +63,10 @@ class BottomPage extends StatelessWidget {
                 ),
                 GestureDetector(
                   onTap: () {
-                    push(context, RainExplorerPage());
+                    push(context, ChannelsPage());
                   },
                   child: Icon(
-                    Icons.whatshot,
+                    Icons.campaign,
                     color: page == 2 ? textColor : textColor.withOpacity(0.5),
                     size: 30,
                   ),

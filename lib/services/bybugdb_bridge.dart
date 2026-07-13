@@ -360,3 +360,111 @@ class ByBugStorage {
     }
   }
 }
+
+class ByBugChannel {
+  static Future<List<dynamic>> createChannel({
+    required String name,
+    String description = '',
+  }) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_create.php'),
+        headers: headers,
+        body: jsonEncode({'name': name, 'description': description}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, j['channel']];
+      }
+      return [0, j['message'] ?? 'Kanal olusturulamadi', j['suggestions'] ?? []];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<List<dynamic>> postToChannel({
+    required String channelId,
+    required String content,
+    String type = 'text',
+  }) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_post.php'),
+        headers: headers,
+        body: jsonEncode({'channel_id': channelId, 'content': content, 'type': type}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, j['post']];
+      }
+      return [0, j['message'] ?? 'Paylasim yapilamadi'];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<List<dynamic>> getFeed(String channelId, {String afterId = '0'}) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.get(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_feed.php?channel_id=$channelId&after_id=$afterId'),
+        headers: headers,
+      );
+      final decoded = jsonDecode(resp.body);
+      if (decoded is! List) return [0, []];
+      return [1, decoded];
+    } catch (e) {
+      return [0, []];
+    }
+  }
+
+  static StreamSubscription<String>? _sseSub;
+
+  static Future<void> streamChannel({
+    required String channelId,
+    required Function(Map<String, dynamic> post) onPost,
+    String afterId = '0',
+  }) async {
+    await _sseSub?.cancel();
+    final token = await ByBugAuth._getToken();
+    final client = http.Client();
+
+    Future<void> connect(String lastId) async {
+      final uri = Uri.parse(
+        '${ByBugDB.apiBaseUrl}/db/channel_stream.php?channel_id=$channelId&after_id=$lastId&token=${token ?? ''}',
+      );
+      final request = http.Request('GET', uri);
+      final response = await client.send(request);
+
+      String currentLastId = lastId;
+      _sseSub = response.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter())
+          .listen((line) {
+        if (line.startsWith('data: ')) {
+          final jsonStr = line.substring(6);
+          try {
+            final data = jsonDecode(jsonStr);
+            if (data is Map && data.containsKey('id')) {
+              currentLastId = data['id'].toString();
+              onPost(Map<String, dynamic>.from(data));
+            }
+          } catch (_) {}
+        }
+      }, onDone: () {
+        connect(currentLastId);
+      }, onError: (_) {
+        Future.delayed(const Duration(seconds: 3), () => connect(currentLastId));
+      });
+    }
+
+    await connect(afterId);
+  }
+
+  static void stopStream() {
+    _sseSub?.cancel();
+    _sseSub = null;
+  }
+}
