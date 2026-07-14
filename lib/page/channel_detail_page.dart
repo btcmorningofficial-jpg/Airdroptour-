@@ -36,6 +36,12 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
 
   bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
 
+  List<Map<String, dynamic>> get _sortedPosts {
+    final pinned = _posts.where((p) => p['pinned'] == true).toList();
+    final rest = _posts.where((p) => p['pinned'] != true).toList();
+    return [...pinned, ...rest];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -148,6 +154,32 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     }
   }
 
+  Future<void> _togglePin(Map<String, dynamic> post) async {
+    final channelId = widget.channel['id'];
+    final bucket = 'channel_posts:$channelId';
+    final postId = post['id'].toString();
+    final isPinned = post['pinned'] == true;
+
+    if (!isPinned) {
+      for (final p in _posts) {
+        if (p['pinned'] == true && p['id'].toString() != postId) {
+          p['pinned'] = false;
+          await ByBugDatabase.update(bucket, p['id'].toString(), p);
+        }
+      }
+    }
+
+    final updated = Map<String, dynamic>.from(post);
+    updated['pinned'] = !isPinned;
+    await ByBugDatabase.update(bucket, postId, updated);
+
+    setState(() {
+      final idx = _posts.indexWhere((p) => p['id'].toString() == postId);
+      if (idx != -1) _posts[idx]['pinned'] = !isPinned;
+    });
+  }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -165,10 +197,13 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                     ? const Center(child: Text('No posts yet'))
                     : ListView.builder(
                         padding: const EdgeInsets.all(12),
-                        itemCount: _posts.length,
+                        itemCount: _sortedPosts.length,
                         itemBuilder: (context, index) {
-                          final post = _posts[index];
-                          return Container(
+                          final post = _sortedPosts[index];
+                          return GestureDetector(
+                            onLongPress:
+                                _isOwner ? () => _togglePin(post) : null,
+                            child: Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
