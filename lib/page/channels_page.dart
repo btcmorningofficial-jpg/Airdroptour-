@@ -52,97 +52,35 @@ class _ChannelsPageState extends State<ChannelsPage> {
       _error = null;
     });
 
-    final result = await ByBugChannel.createChanne
+    final result = await ByBugChannel.createChannel(
+      name: _nameController.text.trim(),
+      description: _descController.text.trim(),
+    );
 
-cat > lib/page/channel_detail_page.dart << 'EOF'
-import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:airdrop/services/bybugdb_bridge.dart';
-import 'package:airdrop/theme/color.dart';
-import 'package:airdrop/widget/text.dart';
+    setState(() => _creating = false);
 
-class ChannelDetailPage extends StatefulWidget {
-  final Map<String, dynamic> channel;
-  final String currentUid;
-
-  const ChannelDetailPage({
-    super.key,
-    required this.channel,
-    required this.currentUid,
-  });
-
-  @override
-  State<ChannelDetailPage> createState() => _ChannelDetailPageState();
-}
-
-class _ChannelDetailPageState extends State<ChannelDetailPage> {
-  final List<Map<String, dynamic>> _posts = [];
-  final _postController = TextEditingController();
-  bool _posting = false;
-  bool _loading = true;
-  String _lastId = '0';
-
-  bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadInitial();
-  }
-
-  @override
-  void dispose() {
-    ByBugChannel.stopStream();
-    _postController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadInitial() async {
-    final result = await ByBugChannel.getFeed(widget.channel['id']);
     if (result[0] == 1) {
-      final List<dynamic> items = result[1];
-      setState(() {
-        _posts.addAll(items.map((e) => Map<String, dynamic>.from(e)));
-        if (_posts.isNotEmpty) {
-          _lastId = _posts.last['id'].toString();
-        }
-        _loading = false;
-      });
+      _nameController.clear();
+      _descController.clear();
+      await _loadChannels();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Channel created successfully')),
+        );
+      }
     } else {
-      setState(() => _loading = false);
+      setState(() => _error = result[1]?.toString() ?? 'Something went wrong');
     }
-
-    ByBugChannel.streamChannel(
-      channelId: widget.channel['id'],
-      afterId: _lastId,
-      onPost: (post) {
-        if (!mounted) return;
-        setState(() {
-          _posts.add(post);
-        });
-      },
-    );
   }
 
-  Future<void> _sendPost() async {
-    final text = _postController.text.trim();
-    if (text.isEmpty) return;
-    setState(() => _posting = true);
-
-    final result = await ByBugChannel.postToChannel(
-      channelId: widget.channel['id'],
-      content: text,
+  void _openChannel(Map<String, dynamic> channel) {
+    if (_uid == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChannelDetailPage(channel: channel, currentUid: _uid!),
+      ),
     );
-
-    setState(() => _posting = false);
-
-    if (result[0] == 1) {
-      _postController.clear();
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result[1]?.toString() ?? 'Failed to post')),
-      );
-    }
   }
 
   @override
@@ -151,64 +89,91 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
-        title: h1(widget.channel['name'] ?? 'Channel'),
+        title: h1('Channels'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _posts.isEmpty
-                    ? const Center(child: Text('No posts yet'))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _posts.length,
-                        itemBuilder: (context, index) {
-                          final post = _posts[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: navColor,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              post['content']?.toString() ?? '',
-                              style: TextStyle(color: textColor),
-                            ),
-                          );
-                        },
-                      ),
-          ),
-          if (_isOwner)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _postController,
-                      style: TextStyle(color: textColor),
-                      decoration: const InputDecoration(
-                        hintText: 'Write a post...',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    onPressed: _posting ? null : _sendPost,
-                    icon: _posting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send),
-                  ),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _loadChannels,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            h3('Create a new channel'),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _nameController,
+              style: TextStyle(color: textColor),
+              decoration: const InputDecoration(
+                hintText: 'Channel name',
               ),
             ),
-        ],
+            const SizedBox(height: 10),
+            TextField(
+              controller: _descController,
+              style: TextStyle(color: textColor),
+              decoration: const InputDecoration(
+                hintText: 'Description (optional)',
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(_error!, style: const TextStyle(color: Colors.red)),
+              ),
+            ElevatedButton(
+              onPressed: _creating ? null : _createChannel,
+              child: _creating
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Create Channel'),
+            ),
+            const SizedBox(height: 30),
+            h3('All channels'),
+            const SizedBox(height: 10),
+            if (_loadingList)
+              const Center(child: CircularProgressIndicator())
+            else if (_channels.isEmpty)
+              const Text('No channels yet')
+            else
+              ..._channels.map((channel) => GestureDetector(
+                    onTap: () => _openChannel(channel),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: navColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  channel['name']?.toString() ?? '',
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                if ((channel['description'] ?? '').toString().isNotEmpty)
+                                  Text(
+                                    channel['description'].toString(),
+                                    style: TextStyle(color: textColor.withOpacity(0.6)),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, color: textColor),
+                        ],
+                      ),
+                    ),
+                  )),
+          ],
+        ),
       ),
     );
   }
