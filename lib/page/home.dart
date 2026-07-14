@@ -91,6 +91,13 @@ class _HomePageState extends State<HomePage> {
                                 },
                                 child: Icon(Icons.whatshot, size: 26),
                               ),
+                  SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () {
+                      push(context, DMBox());
+                    },
+                    child: Icon(Icons.messenger_outline, size: 26),
+                  ),
                               SizedBox(width: 10),
                             ],
                           ),
