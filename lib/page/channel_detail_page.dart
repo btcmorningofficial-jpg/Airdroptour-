@@ -178,7 +178,6 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       if (idx != -1) _posts[idx]['pinned'] = !isPinned;
     });
   }
-  }
 
   @override
   Widget build(BuildContext context) {
