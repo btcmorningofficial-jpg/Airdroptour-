@@ -354,9 +354,9 @@ class ByBugStorage {
       final respStr = await streamed.stream.bytesToString();
       final j = jsonDecode(respStr);
       if (j['status'] == 1) return j['url'];
-      return null;
+        return "ERR:status_fail:$respStr";
     } catch (e) {
-      return null;
+        return "ERR:$e";
     }
   }
 }

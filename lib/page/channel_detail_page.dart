@@ -124,10 +124,10 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     final url = await ByBugStorage.uploadFile(path);
     setState(() => _isUploadingVoice = false);
 
-    if (url == null || url.isEmpty) {
+        if (url == null || url.startsWith("ERR:")) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to upload voice message')),
+            SnackBar(content: Text(url ?? 'unknown error')),
         );
       }
       return;
