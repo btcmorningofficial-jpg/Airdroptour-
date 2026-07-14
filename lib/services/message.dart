@@ -113,6 +113,17 @@ class MessageServices extends ChangeNotifier {
     await ByBugDatabase.remove("message", tag);
   }
 
+  static Future<void> removeChatMessages(String chatID) async {
+    var allMessages = await ByBugDatabase.getAll("message");
+    for (var element in allMessages) {
+      if (element["value"]["chat_id"] == chatID) {
+        await ByBugDatabase.remove("message", element["tag"]);
+      }
+    }
+    messages.value.clear();
+    messages.notifyListeners();
+  }
+
   static Future<void> load(String chatID, BuildContext context) async {
     var chats = await ByBugDatabase.get("chat", chatID);
     if (chats["value"]["joiner"][0] == MyProfileData.uid()) {
@@ -188,7 +199,7 @@ class _MessageBlockState extends State<MessageBlock> {
                 "Delete Message",
                 textColor: textColor,
                 onTap: () async {
-                  await MessageServices.removeMessage(widget.tag);
+                    await MessageServices.removeChatMessages(widget.value["chat_id"]);
                   visible.value = false;
                   visible.notifyListeners();
                 },
