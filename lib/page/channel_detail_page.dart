@@ -237,6 +237,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                                     post['content']?.toString() ?? '',
                                     style: TextStyle(color: textColor),
                                   ),
+                  ),
                           );
                         },
                       ),
