@@ -185,6 +185,92 @@ class MessageBlock extends StatefulWidget {
 
 class _MessageBlockState extends State<MessageBlock> {
   ValueNotifier<bool> visible = ValueNotifier(true);
+
+  Future<void> _toggleReaction(String emoji) async {
+    final messageId = widget.tag;
+    final uid = MyProfileData.uid();
+
+    final reactions = Map<String, dynamic>.from(widget.value['reactions'] ?? {});
+    final users = List<dynamic>.from(reactions[emoji] ?? []);
+
+    if (users.contains(uid)) {
+      users.remove(uid);
+    } else {
+      users.add(uid);
+    }
+
+    if (users.isEmpty) {
+      reactions.remove(emoji);
+    } else {
+      reactions[emoji] = users;
+    }
+
+    final updated = Map<String, dynamic>.from(widget.value);
+    updated['reactions'] = reactions;
+    await ByBugDatabase.update('message', messageId, updated);
+
+    setState(() {
+      widget.value['reactions'] = reactions;
+    });
+  }
+
+  Future<void> _showReactionPicker() async {
+    const emojis = [
+      '👍', '❤️', '🔥', '😂', '😮', '😢', '🙏', '🎉', '💯', '🚀',
+      '💎', '📈', '📉', '🤝', '👀', '💰', '⚡', '🐂', '🐻', '🌕',
+    ];
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          children: emojis
+              .map((e) => IconButton(
+                    onPressed: () => Navigator.pop(ctx, e),
+                    icon: Text(e, style: const TextStyle(fontSize: 26)),
+                  ))
+              .toList(),
+        ),
+      ),
+    );
+    if (selected != null) {
+      await _toggleReaction(selected);
+    }
+  }
+
+  Widget _buildReactions() {
+    final reactions = Map<String, dynamic>.from(widget.value['reactions'] ?? {});
+    if (reactions.isEmpty) return const SizedBox.shrink();
+    final uid = MyProfileData.uid();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Wrap(
+        spacing: 6,
+        children: reactions.entries.map((entry) {
+          final emoji = entry.key;
+          final users = List<dynamic>.from(entry.value);
+          final reacted = users.contains(uid);
+          return GestureDetector(
+            onTap: () => _toggleReaction(emoji),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: reacted ? Colors.amber.withOpacity(0.3) : Colors.black26,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: reacted ? Colors.amber : Colors.transparent,
+                ),
+              ),
+              child: Text(
+                '\$emoji \${users.length}',
+                style: const TextStyle(color: Colors.white, fontSize: 11),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(

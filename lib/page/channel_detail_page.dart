@@ -4,6 +4,7 @@ import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
+import 'package:cosmos/cosmos.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/text.dart';
 
@@ -36,6 +37,20 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
 
   bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
 
+  String? _avatarUrl;
+
+  Future<void> _changeAvatar() async {
+    if (!_isOwner) return;
+    final path = await pickImage();
+    if (path == null) return;
+    final result = await ByBugChannel.updateAvatar(channelId: widget.channel['id'], filePath: path);
+    if (result[0] == 1) {
+      setState(() { _avatarUrl = result[1]['avatar_url']; });
+    } else {
+      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result[1].toString()))); }
+    }
+  }
+
   List<Map<String, dynamic>> get _sortedPosts {
     final pinned = _posts.where((p) => p['pinned'] == true).toList();
     final rest = _posts.where((p) => p['pinned'] != true).toList();
@@ -45,6 +60,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   @override
   void initState() {
     super.initState();
+    _avatarUrl = widget.channel['avatar_url'];
     _loadInitial();
   }
 
@@ -405,7 +421,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
-        title: h1(widget.channel['name'] ?? 'Channel'),
+        title: Row(children: [GestureDetector(onTap: _changeAvatar, child: CircleAvatar(radius: 18, backgroundColor: navColor, backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty) ? NetworkImage(_avatarUrl!) : null, child: (_avatarUrl == null || _avatarUrl!.isEmpty) ? const Icon(Icons.groups, size: 18, color: Colors.white70) : null)), const SizedBox(width: 10), Expanded(child: h1(widget.channel['name'] ?? 'Channel'))]),
             actions: [ if (_isOwner) IconButton(icon: const Icon(Icons.delete), onPressed: _confirmDeleteChannelFromDetail) ],
       ),
       body: Column(

@@ -383,6 +383,32 @@ class ByBugChannel {
     }
   }
 
+  static Future<List<dynamic>> updateAvatar({
+    required String channelId,
+    required String filePath,
+  }) async {
+    try {
+      final uploadResult = await ByBugStorage.uploadFile(filePath);
+      if (uploadResult == null || uploadResult.startsWith('ERR:')) {
+        return [0, 'Gorsel yuklenemedi'];
+      }
+
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_update_avatar.php'),
+        headers: headers,
+        body: jsonEncode({'channel_id': channelId, 'avatar_url': uploadResult}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, j['channel']];
+      }
+      return [0, j['message'] ?? 'Kanal resmi guncellenemedi'];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
   static Future<List<dynamic>> deleteChannel(String channelId) async {
     try {
       final headers = await ByBugAuth._authHeaders();
