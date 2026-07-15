@@ -73,6 +73,53 @@ class _ChannelsPageState extends State<ChannelsPage> {
     }
   }
 
+
+  void _showChannelMenu(Map<String, dynamic> channel) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Kanali sil', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmDeleteChannel(channel);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteChannel(Map<String, dynamic> channel) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Kanali sil'),
+        content: Text('"${channel['name']}" kanalini kalici olarak silmek istediginize emin misiniz? Tum mesajlar silinecek.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgec')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sil')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final result = await ByBugChannel.deleteChannel(channel['id']);
+    if (result[0] == 1) {
+      setState(() {
+        _channels.removeWhere((c) => c['id'] == channel['id']);
+      });
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result[1]?.toString() ?? 'Kanal silinemedi')),
+      );
+    }
+  }
   void _openChannel(Map<String, dynamic> channel) {
     if (_uid == null) return;
     Navigator.push(
@@ -139,6 +186,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
             else
               ..._channels.map((channel) => GestureDetector(
                     onTap: () => _openChannel(channel),
+                onLongPress: () => channel['owner_id'] == _uid ? _showChannelMenu(channel) : null,
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(12),
