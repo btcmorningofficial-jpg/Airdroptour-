@@ -179,6 +179,96 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     });
   }
 
+  void _showPostMenu(Map<String, dynamic> post) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(post['pinned'] == true ? Icons.push_pin_outlined : Icons.push_pin),
+              title: Text(post['pinned'] == true ? 'Sabitlemeyi kaldir' : 'Sabitle'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _togglePin(post);
+              },
+            ),
+            if (post['type'] != 'audio')
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Duzenle'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _editPost(post);
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Sil', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _deletePost(post);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deletePost(Map<String, dynamic> post) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mesaji sil'),
+        content: const Text('Bu mesaji silmek istediginize emin misiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgec')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sil')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final channelId = widget.channel['id'];
+    final bucket = 'channel_posts:$channelId';
+    final postId = post['id'].toString();
+    await ByBugDatabase.remove(bucket, postId);
+
+    setState(() {
+      _posts.removeWhere((p) => p['id'].toString() == postId);
+    });
+  }
+
+  Future<void> _editPost(Map<String, dynamic> post) async {
+    final controller = TextEditingController(text: post['content']?.toString() ?? '');
+    final newText = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mesaji duzenle'),
+        content: TextField(controller: controller, maxLines: 5, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgec')),
+          TextButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Kaydet')),
+        ],
+      ),
+    );
+    if (newText == null || newText.isEmpty) return;
+
+    final channelId = widget.channel['id'];
+    final bucket = 'channel_posts:$channelId';
+    final postId = post['id'].toString();
+    final updated = Map<String, dynamic>.from(post);
+    updated['content'] = newText;
+    await ByBugDatabase.update(bucket, postId, updated);
+
+    setState(() {
+      final idx = _posts.indexWhere((p) => p['id'].toString() == postId);
+      if (idx != -1) _posts[idx]['content'] = newText;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,7 +291,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                           final post = _sortedPosts[index];
                           return GestureDetector(
                             onLongPress:
-                                _isOwner ? () => _togglePin(post) : null,
+                                _isOwner ? () => _showPostMenu(post) : null,
                             child: Container(
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.all(12),
