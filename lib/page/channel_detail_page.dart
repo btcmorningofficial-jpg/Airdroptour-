@@ -241,6 +241,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                         },
                       ),
           ),
+            if (_isOwner)
             Padding(
               padding: const EdgeInsets.all(12),
               child: Row(

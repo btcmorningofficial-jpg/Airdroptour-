@@ -383,6 +383,24 @@ class ByBugChannel {
     }
   }
 
+  static Future<List<dynamic>> deleteChannel(String channelId) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_delete.php'),
+        headers: headers,
+        body: jsonEncode({'channel_id': channelId}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1];
+      }
+      return [0, j['message'] ?? 'Kanal silinemedi'];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
   static Future<List<dynamic>> postToChannel({
     required String channelId,
     required String content,
