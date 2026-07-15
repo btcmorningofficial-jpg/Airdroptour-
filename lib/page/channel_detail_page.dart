@@ -197,7 +197,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
             if (post['type'] != 'audio')
               ListTile(
                 leading: const Icon(Icons.edit),
-                title: const Text('Duzenle'),
+                title: const Text('Edit'),
                 onTap: () {
                   Navigator.pop(ctx);
                   _editPost(post);
@@ -205,7 +205,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
               ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Sil', style: TextStyle(color: Colors.red)),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(ctx);
                 _deletePost(post);
@@ -222,11 +222,11 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kanali sil'),
-        content: Text('"${widget.channel['name']}" kanalini kalici olarak silmek istediginize emin misiniz? Tum mesajlar silinecek.'),
+        title: const Text('Delete channel'),
+          content: Text('Are you sure you want to permanently delete "${widget.channel['name']}"? All messages will be deleted.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgec')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sil')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
         ],
       ),
     );
@@ -237,7 +237,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       if (mounted) Navigator.pop(context);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result[1]?.toString() ?? 'Kanal silinemedi')),
+        SnackBar(content: Text(result[1]?.toString() ?? 'Channel could not be deleted')),
       );
     }
   }
@@ -248,8 +248,8 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         title: const Text('Mesaji sil'),
         content: const Text('Bu mesaji silmek istediginize emin misiniz?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgec')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sil')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
         ],
       ),
     );
@@ -273,7 +273,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         title: const Text('Mesaji duzenle'),
         content: TextField(controller: controller, maxLines: 5, autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vazgec')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Kaydet')),
         ],
       ),
