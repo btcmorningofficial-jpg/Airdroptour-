@@ -217,6 +217,30 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     );
   }
 
+
+  Future<void> _confirmDeleteChannelFromDetail() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Kanali sil'),
+        content: Text('"${widget.channel['name']}" kanalini kalici olarak silmek istediginize emin misiniz? Tum mesajlar silinecek.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgec')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sil')),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final result = await ByBugChannel.deleteChannel(widget.channel['id']);
+    if (result[0] == 1) {
+      if (mounted) Navigator.pop(context);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result[1]?.toString() ?? 'Kanal silinemedi')),
+      );
+    }
+  }
   Future<void> _deletePost(Map<String, dynamic> post) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -276,6 +300,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       appBar: AppBar(
         backgroundColor: bg,
         title: h1(widget.channel['name'] ?? 'Channel'),
+            actions: [ if (_isOwner) IconButton(icon: const Icon(Icons.delete), onPressed: _confirmDeleteChannelFromDetail) ],
       ),
       body: Column(
         children: [
