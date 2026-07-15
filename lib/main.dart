@@ -3,6 +3,7 @@ import 'package:airdrop/page/login.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -19,7 +20,11 @@ void main() async {
   if (isSignedIn) {
     await MyProfileData.getMyProfile();
   }
-  runApp(MyApp(isSignedIn: isSignedIn));
+  runZonedGuarded(() {
+    runApp(MyApp(isSignedIn: isSignedIn));
+  }, (error, stack) {
+    debugPrint('YAKALANAN HATA: $error');
+  });
 }
 
 class MyApp extends StatelessWidget {
