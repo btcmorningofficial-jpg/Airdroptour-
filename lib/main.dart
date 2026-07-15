@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorWidget.builder = (details) => Material(color: Colors.white, child: Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(details.exceptionAsString(), style: const TextStyle(color: Colors.red, fontSize: 12)))));
   await initializeDateFormatting('en', null);
   ByBugDB.initialize(
     // Kendi sunucumuzdaki PHP + MySQL backend adresi
