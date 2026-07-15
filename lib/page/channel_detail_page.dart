@@ -8,6 +8,8 @@ import 'package:cosmos/cosmos.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/text.dart';
 
+Map<String, dynamic> _asReactionsMap(dynamic v) => (v is Map) ? Map<String, dynamic>.from(v) : <String, dynamic>{};
+
 class ChannelDetailPage extends StatefulWidget {
   final Map<String, dynamic> channel;
   final String currentUid;
@@ -176,7 +178,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     final postId = post['id'].toString();
     final uid = widget.currentUid;
 
-    final reactions = Map<String, dynamic>.from(post['reactions'] ?? {});
+    final reactions = _asReactionsMap(post['reactions']);
     final users = List<dynamic>.from(reactions[emoji] ?? []);
 
     if (users.contains(uid)) {
@@ -226,7 +228,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   }
 
   Widget _buildReactions(Map<String, dynamic> post) {
-    final reactions = Map<String, dynamic>.from(post['reactions'] ?? {});
+    final reactions = _asReactionsMap(post['reactions']);
     final uid = widget.currentUid;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
