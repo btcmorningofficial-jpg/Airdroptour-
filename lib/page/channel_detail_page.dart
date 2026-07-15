@@ -154,6 +154,112 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     }
   }
 
+  Future<void> _toggleReaction(Map<String, dynamic> post, String emoji) async {
+    final channelId = widget.channel['id'];
+    final bucket = 'channel_posts:$channelId';
+    final postId = post['id'].toString();
+    final uid = widget.currentUid;
+
+    final reactions = Map<String, dynamic>.from(post['reactions'] ?? {});
+    final users = List<dynamic>.from(reactions[emoji] ?? []);
+
+    if (users.contains(uid)) {
+      users.remove(uid);
+    } else {
+      users.add(uid);
+    }
+
+    if (users.isEmpty) {
+      reactions.remove(emoji);
+    } else {
+      reactions[emoji] = users;
+    }
+
+    final updated = Map<String, dynamic>.from(post);
+    updated['reactions'] = reactions;
+    await ByBugDatabase.update(bucket, postId, updated);
+
+    setState(() {
+      final idx = _posts.indexWhere((p) => p['id'].toString() == postId);
+      if (idx != -1) _posts[idx]['reactions'] = reactions;
+    });
+  }
+
+  Future<void> _showReactionPicker(Map<String, dynamic> post) async {
+    const emojis = [
+      '👍', '❤️', '🔥', '😂', '😮', '😢', '🙏', '🎉', '💯', '🚀',
+      '💎', '📈', '📉', '🤝', '👀', '💰', '⚡', '🐂', '🐻', '🌕',
+    ];
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          children: emojis
+              .map((e) => IconButton(
+                    onPressed: () => Navigator.pop(ctx, e),
+                    icon: Text(e, style: const TextStyle(fontSize: 26)),
+                  ))
+              .toList(),
+        ),
+      ),
+    );
+    if (selected != null) {
+      await _toggleReaction(post, selected);
+    }
+  }
+
+  Widget _buildReactions(Map<String, dynamic> post) {
+    final reactions = Map<String, dynamic>.from(post['reactions'] ?? {});
+    final uid = widget.currentUid;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        children: [
+          ...reactions.entries.map((entry) {
+            final emoji = entry.key;
+            final users = List<dynamic>.from(entry.value);
+            final reacted = users.contains(uid);
+            return GestureDetector(
+              onTap: () => _toggleReaction(post, emoji),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color:
+                      reacted ? Colors.amber.withOpacity(0.3) : navColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: reacted ? Colors.amber : Colors.transparent,
+                  ),
+                ),
+                child: Text(
+                  '$emoji ${users.length}',
+                  style: TextStyle(color: textColor, fontSize: 12),
+                ),
+              ),
+            );
+          }),
+          GestureDetector(
+            onTap: () => _showReactionPicker(post),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: navColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.add_reaction_outlined,
+                  size: 16, color: textColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _togglePin(Map<String, dynamic> post) async {
     final channelId = widget.channel['id'];
     final bucket = 'channel_posts:$channelId';
@@ -324,7 +430,11 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                               color: navColor,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: post['type'] == 'audio'
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                post['type'] == 'audio'
                                 ? Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -351,6 +461,9 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                                     post['content']?.toString() ?? '',
                                     style: TextStyle(color: textColor),
                                   ),
+                                _buildReactions(post),
+                              ],
+                            ),
                   ),
                           );
                         },
