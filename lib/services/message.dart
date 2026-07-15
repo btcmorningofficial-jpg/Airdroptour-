@@ -54,6 +54,7 @@ class MessageServices extends ChangeNotifier {
             photo: usr["photo"],
             name: usr["name"],
             chatID: element["tag"],
+            uid: uu,
             lastMessage: value["lastMessage"],
             dateTime: DateTime.parse(value["lastTime"]),
           ),

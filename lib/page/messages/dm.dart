@@ -79,6 +79,7 @@ class DMItems extends StatelessWidget {
   final String photo;
   final String name;
   final String chatID;
+  final String uid;
   final String lastMessage;
   final DateTime dateTime;
 
@@ -87,6 +88,7 @@ class DMItems extends StatelessWidget {
     required this.photo,
     required this.name,
     required this.chatID,
+    required this.uid,
     required this.lastMessage,
     required this.dateTime,
   });
@@ -96,6 +98,23 @@ class DMItems extends StatelessWidget {
     return GestureDetector(
       onTap: () async {
         await MessageServices.load(chatID, context);
+      },
+      onLongPress: () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Delete conversation"),
+            content: Text("Are you sure you want to delete the conversation with \"$name\"? This cannot be undone."),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Delete")),
+            ],
+          ),
+        );
+        if (confirm != true) return;
+        await MessageServices.remove(uid);
+        await MessageServices.removeChatMessages(chatID);
+        await MessageServices.getDM();
       },
       child: Container(
         decoration: BoxDecoration(
