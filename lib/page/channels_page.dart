@@ -83,7 +83,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Kanali sil', style: TextStyle(color: Colors.red)),
+              title: const Text('Delete Channel', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(ctx);
                 _confirmDeleteChannel(channel);
@@ -99,11 +99,11 @@ class _ChannelsPageState extends State<ChannelsPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kanali sil'),
+        title: const Text('Delete Channel'),
         content: Text('"${channel['name']}" kanalini kalici olarak silmek istediginize emin misiniz? Tum mesajlar silinecek.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgec')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Sil')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
         ],
       ),
     );
@@ -116,7 +116,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
       });
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result[1]?.toString() ?? 'Kanal silinemedi')),
+        SnackBar(content: Text(result[1]?.toString() ?? 'Failed to delete channel')),
       );
     }
   }
