@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
@@ -7,7 +8,6 @@ import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/text.dart';
-import 'package:airdrop/page/channel_settings_page.dart';
 import 'package:airdrop/page/channel_settings_page.dart';
 
 Map<String, dynamic> _asReactionsMap(dynamic v) => (v is Map) ? Map<String, dynamic>.from(v) : <String, dynamic>{};
@@ -519,13 +519,37 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
-        title: Row(children: [GestureDetector(onTap: _changeAvatar, child: CircleAvatar(radius: 18, backgroundColor: navColor, backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty) ? NetworkImage(_avatarUrl!) : null, child: (_avatarUrl == null || _avatarUrl!.isEmpty) ? const Icon(Icons.groups, size: 18, color: Colors.white70) : null)), const SizedBox(width: 10), Expanded(child: h1(widget.channel['name'] ?? 'Channel'))]),
-            actions: [
-            TextButton.icon(
-              onPressed: _showMembersList,
-              icon: const Icon(Icons.people, size: 18, color: Colors.white),
-              label: Text('$_memberCount', style: const TextStyle(color: Colors.white)),
+        title: Row(children: [
+          GestureDetector(
+            onTap: _changeAvatar,
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: navColor,
+              backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty) ? NetworkImage(_avatarUrl!) : null,
+              child: (_avatarUrl == null || _avatarUrl!.isEmpty) ? const Icon(Icons.groups, size: 18, color: Colors.white70) : null,
             ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  widget.channel['name'] ?? 'Channel',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                Text(
+                  '\$_memberCount members',
+                  style: GoogleFonts.poppins(color: Colors.white70, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ]),
+            actions: [
               TextButton(
                 onPressed: _toggleSubscription,
                 child: Text(
@@ -533,10 +557,11 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
-            if (_isOwner)
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () async {
+          if (_isOwner)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+              onSelected: (value) async {
+                if (value == 'settings') {
                   final updated = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => ChannelSettingsPage(channel: widget.channel)),
@@ -547,9 +572,15 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                       widget.channel['description'] = updated['description'];
                     });
                   }
-                },
-              ),
-            if (_isOwner) IconButton(icon: const Icon(Icons.delete), onPressed: _confirmDeleteChannelFromDetail),
+                } else if (value == 'delete') {
+                  _confirmDeleteChannelFromDetail();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'settings', child: Text('Channel Settings')),
+                PopupMenuItem(value: 'delete', child: Text('Delete Channel')),
+              ],
+            ),
           ],
       ),
       body: Column(
