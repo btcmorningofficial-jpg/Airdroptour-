@@ -139,9 +139,14 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                   itemCount: _members.length,
                   itemBuilder: (context, index) {
                     final m = _members[index];
+                    final name = (m['name'] ?? '').toString();
+                    final photo = (m['photo'] ?? '').toString();
                     return ListTile(
-                      leading: const Icon(Icons.person),
-                      title: Text(m['uid']?.toString() ?? ''),
+                      leading: CircleAvatar(
+                        backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                        child: photo.isEmpty ? const Icon(Icons.person) : null,
+                      ),
+                      title: Text(name.isNotEmpty ? name : (m['uid']?.toString() ?? '')),
                     );
                   },
                 ),
