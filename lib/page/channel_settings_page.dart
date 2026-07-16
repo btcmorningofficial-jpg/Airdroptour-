@@ -70,7 +70,7 @@ class _ChannelSettingsPageState extends State<ChannelSettingsPage> {
                 )
               : TextButton(
                   onPressed: _save,
-                  child: const Text('Kaydet', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
         ],
       ),

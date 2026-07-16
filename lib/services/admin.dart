@@ -155,7 +155,7 @@ class AdminServices extends ChangeNotifier {
                 onTap: () async {
                   await ByBugDatabase.remove("ads", element["tag"]);
                   if (!context.mounted) return;
-                  getSuccessSnack(context, "Banner Yayından Kaldırıldı.");
+                  getSuccessSnack(context, "Banner removed.");
                   adsAdmin.value = tempAds;
                   adsAdmin.notifyListeners();
                   await Future.delayed(Durations.long2);

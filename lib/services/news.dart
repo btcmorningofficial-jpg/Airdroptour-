@@ -65,18 +65,18 @@ class News extends ChangeNotifier {
           onTap: () async {
             await SelectDialog.showModal<String>(
               context,
-              searchHint: "Seçenekler içinde ara",
+              searchHint: "Search options",
               label: "Habere Dair",
               backgroundColor: navColor,
               constraints: BoxConstraints(maxWidth: width(context) * 0.5),
-              items: ["Haberi Görüntüle", "Haberi Sil"],
+              items: ["View News", "Delete News"],
               onChange: (p0) async {
-                if (p0 == "Haberi Sil") {
+                if (p0 == "Delete News") {
                   await ByBugDatabase.remove("news", element["tag"]);
                   await Future.delayed(Durations.extralong4);
                   if (!context.mounted) return;
                   await getAll(context);
-                } else if (p0 == "Haberi Görüntüle") {
+                } else if (p0 == "View News") {
                   await Future.delayed(Durations.extralong4);
                   if (!context.mounted) return;
                   push(

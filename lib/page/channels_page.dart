@@ -102,7 +102,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
         title: const Text('Delete Channel'),
         content: Text('"${channel['name']}" kanalini kalici olarak silmek istediginize emin misiniz? Tum mesajlar silinecek.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Vazgec')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
         ],
       ),

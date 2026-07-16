@@ -20,7 +20,7 @@ class MessageServices extends ChangeNotifier {
     await ByBugDatabase.add("chat", tag, {
       "joiner": [targetUID, MyProfileData.uid()],
       "create_at": DateTime.now().toString(),
-      "lastMessage": "Sohbet başlangıcı!",
+      "lastMessage": "Start of conversation!",
       "lastTime": DateTime.now().toString(),
       "photo": MyProfileData.photo(),
       "name": MyProfileData.name(),

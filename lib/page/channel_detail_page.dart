@@ -465,7 +465,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Mesaji sil'),
+        title: const Text('Delete Message'),
         content: const Text('Bu mesaji silmek istediginize emin misiniz?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
@@ -494,7 +494,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         content: TextField(controller: controller, maxLines: 5, autofocus: true),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Kaydet')),
+          TextButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Save')),
         ],
       ),
     );
@@ -529,7 +529,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
               TextButton(
                 onPressed: _toggleSubscription,
                 child: Text(
-                  _isSubscribed ? 'Ayril' : 'Katil',
+                  _isSubscribed ? 'Leave' : 'Join',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
