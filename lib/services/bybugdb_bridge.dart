@@ -543,6 +543,48 @@ class ByBugChannel {
     }
   }
 
+  static Future<List<dynamic>> addAdmin({
+    required String channelId,
+    required String targetUid,
+  }) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_add_admin.php'),
+        headers: headers,
+        body: jsonEncode({'channel_id': channelId, 'target_uid': targetUid}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, j['channel']];
+      }
+      return [0, j['message'] ?? 'Yonetici atanamadi'];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<List<dynamic>> removeAdmin({
+    required String channelId,
+    required String targetUid,
+  }) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_remove_admin.php'),
+        headers: headers,
+        body: jsonEncode({'channel_id': channelId, 'target_uid': targetUid}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, j['channel']];
+      }
+      return [0, j['message'] ?? 'Yonetici kaldirilamadi'];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
   static StreamSubscription<String>? _sseSub;
 
   static Future<void> streamChannel({
