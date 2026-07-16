@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'channel_info_page.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
@@ -530,7 +531,18 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(
+        Expanded(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChannelInfoPage(
+                  channel: widget.channel,
+                  currentUid: widget.currentUid,
+                ),
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
@@ -540,14 +552,15 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                ),
+               ),
                 Text(
-                  '\$_memberCount members',
+                  '$_memberCount members',
                   style: GoogleFonts.poppins(color: Colors.white70, fontSize: 11),
                 ),
               ],
             ),
           ),
+        ),
         ]),
             actions: [
               TextButton(
@@ -652,6 +665,11 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                   Expanded(
                     child: TextField(
                       controller: _postController,
+                maxLines: null,
+                minLines: 1,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+
                       style: TextStyle(color: textColor),
                       decoration: const InputDecoration(
                         hintText: 'Write a post...',

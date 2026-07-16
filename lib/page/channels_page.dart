@@ -100,7 +100,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Channel'),
-        content: Text('"${channel['name']}" kanalini kalici olarak silmek istediginize emin misiniz? Tum mesajlar silinecek.'),
+        content: Text('Are you sure you want to permanently delete "${channel["name"]}"? All messages will be deleted.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
@@ -199,6 +199,13 @@ class _ChannelsPageState extends State<ChannelsPage> {
                       ),
                       child: Row(
                         children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: Colors.white24,
+                  backgroundImage: (channel['avatar_url'] != null && channel['avatar_url'].toString().isNotEmpty) ? NetworkImage(channel['avatar_url'].toString()) : null,
+                  child: (channel['avatar_url'] == null || channel['avatar_url'].toString().isEmpty) ? Text((channel['name']?.toString().isNotEmpty == true) ? channel['name'].toString()[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)) : null,
+                ),
+                const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
