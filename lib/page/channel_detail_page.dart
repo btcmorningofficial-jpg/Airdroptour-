@@ -143,12 +143,37 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                     final m = _members[index];
                     final name = (m['name'] ?? '').toString();
                     final photo = (m['photo'] ?? '').toString();
+                    final memberUid = (m['uid'] ?? '').toString();
+                    final adminIds = List<String>.from(widget.channel['admin_ids'] ?? []);
+                    final isAdmin = adminIds.contains(memberUid);
                     return ListTile(
                       leading: CircleAvatar(
                         backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
                         child: photo.isEmpty ? const Icon(Icons.person) : null,
                       ),
-                      title: Text(name.isNotEmpty ? name : (m['uid']?.toString() ?? '')),
+                      title: Text(name.isNotEmpty ? name : memberUid),
+                      subtitle: isAdmin ? const Text('Yonetici', style: TextStyle(color: Colors.amber, fontSize: 12)) : null,
+                      trailing: (_isOwner && memberUid != widget.currentUid)
+                          ? IconButton(
+                              icon: Icon(isAdmin ? Icons.remove_moderator : Icons.add_moderator),
+                              onPressed: () async {
+                                final result = isAdmin
+                                    ? await ByBugChannel.removeAdmin(channelId: widget.channel['id'], targetUid: memberUid)
+                                    : await ByBugChannel.addAdmin(channelId: widget.channel['id'], targetUid: memberUid);
+                                if (result[0] == 1) {
+                                  setState(() {
+                                    widget.channel['admin_ids'] = result[1]['admin_ids'];
+                                  });
+                                  if (mounted) Navigator.pop(context);
+                                  _showMembersList();
+                                } else if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(result[1]?.toString() ?? 'Islem basarisiz')),
+                                  );
+                                }
+                              },
+                            )
+                          : null,
                     );
                   },
                 ),
