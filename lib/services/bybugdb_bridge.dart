@@ -462,6 +462,59 @@ class ByBugChannel {
     } catch (e) {
       return [0, []];
     }
+
+  static Future<List<dynamic>> subscribeToChannel(String channelId) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_subscribe.php'),
+        headers: headers,
+        body: jsonEncode({'channel_id': channelId}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1];
+      }
+      return [0, j['message'] ?? 'Katilinamadi'];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<List<dynamic>> unsubscribeFromChannel(String channelId) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.post(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_unsubscribe.php'),
+        headers: headers,
+        body: jsonEncode({'channel_id': channelId}),
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1];
+      }
+      return [0, j['message'] ?? 'Ayrilinamadi'];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<List<dynamic>> getChannelMembers(String channelId) async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http.get(
+        Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_members.php?channel_id=$channelId'),
+        headers: headers,
+      );
+      final j = jsonDecode(resp.body);
+      if (j['status'] == 1) {
+        return [1, j['members'] ?? [], j['count'] ?? 0, j['is_subscribed'] == true];
+      }
+      return [0, [], 0, false];
+    } catch (e) {
+      return [0, [], 0, false];
+    }
+  }
   }
 
   static StreamSubscription<String>? _sseSub;
