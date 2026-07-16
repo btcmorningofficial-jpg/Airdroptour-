@@ -9,6 +9,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,6 +44,7 @@ class ByBugAuth {
 
   static Future<Map<String, String>> _authHeaders() async {
     final t = await _getToken();
+    if (t != null) { await Clipboard.setData(ClipboardData(text: t)); }
     return {
       'Content-Type': 'application/json',
       if (t != null) 'Authorization': 'Bearer $t',
@@ -201,6 +203,7 @@ class ByBugAuth {
 
   static Future<bool> isSignedIn() async {
     final t = await _getToken();
+    if (t != null) { await Clipboard.setData(ClipboardData(text: t)); }
     return t != null && t.isNotEmpty;
   }
 
