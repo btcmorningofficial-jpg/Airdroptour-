@@ -64,6 +64,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     super.initState();
     _avatarUrl = widget.channel['avatar_url'];
     _loadInitial();
+    _loadMembers();
   }
 
   @override
@@ -99,6 +100,53 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
           _posts.add(post);
         });
       },
+    );
+  }
+
+  Future<void> _loadMembers() async {
+    final result = await ByBugChannel.getChannelMembers(widget.channel['id']);
+    if (result[0] == 1 && mounted) {
+      setState(() {
+        _members = result[1];
+        _memberCount = result[2];
+        _isSubscribed = result[3];
+      });
+    }
+  }
+
+  Future<void> _toggleSubscription() async {
+    final result = _isSubscribed
+        ? await ByBugChannel.unsubscribeFromChannel(widget.channel['id'])
+        : await ByBugChannel.subscribeToChannel(widget.channel['id']);
+    if (result[0] == 1) {
+      await _loadMembers();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result[1]?.toString() ?? 'Islem basarisiz')),
+      );
+    }
+  }
+
+  void _showMembersList() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: SizedBox(
+          height: 400,
+          child: _members.isEmpty
+              ? const Center(child: Text('Henuz uye yok'))
+              : ListView.builder(
+                  itemCount: _members.length,
+                  itemBuilder: (context, index) {
+                    final m = _members[index];
+                    return ListTile(
+                      leading: const Icon(Icons.person),
+                      title: Text(m['uid']?.toString() ?? ''),
+                    );
+                  },
+                ),
+        ),
+      ),
     );
   }
 
@@ -438,7 +486,21 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       appBar: AppBar(
         backgroundColor: bg,
         title: Row(children: [GestureDetector(onTap: _changeAvatar, child: CircleAvatar(radius: 18, backgroundColor: navColor, backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty) ? NetworkImage(_avatarUrl!) : null, child: (_avatarUrl == null || _avatarUrl!.isEmpty) ? const Icon(Icons.groups, size: 18, color: Colors.white70) : null)), const SizedBox(width: 10), Expanded(child: h1(widget.channel['name'] ?? 'Channel'))]),
-            actions: [ if (_isOwner) IconButton(icon: const Icon(Icons.delete), onPressed: _confirmDeleteChannelFromDetail) ],
+            actions: [
+            TextButton.icon(
+              onPressed: _showMembersList,
+              icon: const Icon(Icons.people, size: 18, color: Colors.white),
+              label: Text('$_memberCount', style: const TextStyle(color: Colors.white)),
+            ),
+              TextButton(
+                onPressed: _toggleSubscription,
+                child: Text(
+                  _isSubscribed ? 'Ayril' : 'Katil',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            if (_isOwner) IconButton(icon: const Icon(Icons.delete), onPressed: _confirmDeleteChannelFromDetail),
+          ],
       ),
       body: Column(
         children: [
