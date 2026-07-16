@@ -516,7 +516,6 @@ class ByBugChannel {
       return [0, [], 0, false];
     }
   }
-  }
 
   static Future<List<dynamic>> updateChannel({
     required String channelId,
