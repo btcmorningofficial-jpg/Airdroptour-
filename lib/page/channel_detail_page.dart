@@ -179,6 +179,19 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     final uid = widget.currentUid;
 
     final reactions = _asReactionsMap(post['reactions']);
+
+    for (final e in List<String>.from(reactions.keys)) {
+      if (e == emoji) continue;
+      final u = List<dynamic>.from(reactions[e] ?? []);
+      if (u.remove(uid)) {
+        if (u.isEmpty) {
+          reactions.remove(e);
+        } else {
+          reactions[e] = u;
+        }
+      }
+    }
+
     final users = List<dynamic>.from(reactions[emoji] ?? []);
 
     if (users.contains(uid)) {
@@ -191,6 +204,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       reactions.remove(emoji);
     } else {
       reactions[emoji] = users;
+    }
     }
 
     final updated = Map<String, dynamic>.from(post);
