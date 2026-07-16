@@ -120,14 +120,17 @@ class _ChannelsPageState extends State<ChannelsPage> {
       );
     }
   }
-  void _openChannel(Map<String, dynamic> channel) {
+  Future<void> _openChannel(Map<String, dynamic> channel) async {
     if (_uid == null) return;
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ChannelDetailPage(channel: channel, currentUid: _uid!),
       ),
     );
+    if (mounted) {
+      await _loadChannels();
+    }
   }
 
   @override
