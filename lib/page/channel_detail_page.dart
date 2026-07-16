@@ -32,6 +32,9 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   bool _posting = false;
   bool _loading = true;
   String _lastId = '0';
+  List<dynamic> _members = [];
+  int _memberCount = 0;
+  bool _isSubscribed = false;
 
   final _recorder = AudioRecorder();
   final _player = AudioPlayer();
