@@ -462,6 +462,7 @@ class ByBugChannel {
     } catch (e) {
       return [0, []];
     }
+  }
 
   static Future<List<dynamic>> subscribeToChannel(String channelId) async {
     try {

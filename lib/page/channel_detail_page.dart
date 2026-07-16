@@ -285,7 +285,6 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     } else {
       reactions[emoji] = users;
     }
-    }
 
     final updated = Map<String, dynamic>.from(post);
     updated['reactions'] = reactions;
