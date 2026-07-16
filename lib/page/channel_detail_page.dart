@@ -7,6 +7,8 @@ import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/text.dart';
+import 'package:airdrop/page/channel_settings_page.dart';
+import 'package:airdrop/page/channel_settings_page.dart';
 
 Map<String, dynamic> _asReactionsMap(dynamic v) => (v is Map) ? Map<String, dynamic>.from(v) : <String, dynamic>{};
 
@@ -503,6 +505,22 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                   _isSubscribed ? 'Ayril' : 'Katil',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
+              ),
+            if (_isOwner)
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () async {
+                  final updated = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ChannelSettingsPage(channel: widget.channel)),
+                  );
+                  if (updated != null && mounted) {
+                    setState(() {
+                      widget.channel['name'] = updated['name'];
+                      widget.channel['description'] = updated['description'];
+                    });
+                  }
+                },
               ),
             if (_isOwner) IconButton(icon: const Icon(Icons.delete), onPressed: _confirmDeleteChannelFromDetail),
           ],
