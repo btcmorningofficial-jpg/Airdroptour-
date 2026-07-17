@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <application
         android:label="Airdroptour"
         android:name="${applicationName}"
@@ -24,6 +25,17 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!-- Kanal deep link: appairdroptour.yurtdisiisilanlari.com.tr/channel/... -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="appairdroptour.yurtdisiisilanlari.com.tr"
+                    android:pathPrefix="/channel"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
