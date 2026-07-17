@@ -27,7 +27,7 @@ class BottomPage extends StatelessWidget {
           SizedBox(
             width: widthSizer(context),
             height: height(context),
-            child: child,
+          child: Padding(padding: const EdgeInsets.only(bottom: 70), child: child),
           ),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
