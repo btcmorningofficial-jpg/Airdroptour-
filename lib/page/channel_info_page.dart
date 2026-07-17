@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:airdrop/services/bybugdb_bridge.dart';
-import 'package:airdrop/theme/color.dart';
+import '../services/bybugdb_bridge.dart';
 
 class ChannelInfoPage extends StatefulWidget {
   final Map<String, dynamic> channel;
@@ -19,15 +16,12 @@ class ChannelInfoPage extends StatefulWidget {
 }
 
 class _ChannelInfoPageState extends State<ChannelInfoPage> {
-  bool _loading = true;
   List<dynamic> _members = [];
   int _memberCount = 0;
+  bool _loading = true;
   bool _isSubscribed = false;
 
   bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
-  List<String> get _adminIds =>
-      List<String>.from(widget.channel['admin_ids'] ?? []);
-  bool get _isAdmin => _adminIds.contains(widget.currentUid);
 
   @override
   void initState() {
@@ -37,36 +31,105 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
 
   Future<void> _loadMembers() async {
     final result = await ByBugChannel.getChannelMembers(widget.channel['id']);
-    if (!mounted) return;
-    setState(() {
-      _members = result[1] ?? [];
-      _memberCount = result[2] ?? 0;
-      _isSubscribed = result[3] ?? false;
-      _loading = false;
-    });
+    if (result[0] == 1 && mounted) {
+      setState(() {
+        _members = result[1];
+        _memberCount = result[2];
+        _isSubscribed = result[3];
+        _loading = false;
+      });
+    } else if (mounted) {
+      setState(() => _loading = false);
+    }
   }
 
-  void _copyInviteLink() {
-    final link = 'https://btcmorning.com/channel/${widget.channel['id']}';
-    Clipboard.setData(ClipboardData(text: link));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Davet linki kopyalandı')),
+  int get _adminCount {
+    final adminIds = List<String>.from(widget.channel['admin_ids'] ?? []);
+    return adminIds.length;
+  }
+
+  Future<void> _editDescription() async {
+    final controller = TextEditingController(
+      text: (widget.channel['description'] ?? '').toString(),
     );
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit description'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          maxLength: 200,
+          decoration: const InputDecoration(hintText: 'Channel description'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null) return;
+
+    final res = await ByBugChannel.updateChannel(
+      channelId: widget.channel['id'],
+      name: widget.channel['name'],
+      description: result,
+    );
+
+    if (res[0] == 1 && mounted) {
+      setState(() {
+        widget.channel['description'] = result;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Description updated')),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Update failed')),
+      );
+    }
+  }
+
+  Future<void> _toggleAdmin(String targetUid, bool isAdmin) async {
+    final result = isAdmin
+        ? await ByBugChannel.removeAdmin(
+            channelId: widget.channel['id'], targetUid: targetUid)
+        : await ByBugChannel.addAdmin(
+            channelId: widget.channel['id'], targetUid: targetUid);
+
+    if (result[0] == 1 && mounted) {
+      setState(() {
+        final adminIds =
+            List<String>.from(widget.channel['admin_ids'] ?? []);
+        if (isAdmin) {
+          adminIds.remove(targetUid);
+        } else {
+          adminIds.add(targetUid);
+        }
+        widget.channel['admin_ids'] = adminIds;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.channel['name'] ?? 'Channel';
+    final name = (widget.channel['name'] ?? '').toString();
     final description = (widget.channel['description'] ?? '').toString();
-    final avatarUrl = widget.channel['avatar_url'];
+    final photo = (widget.channel['avatar_url'] ?? '').toString();
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: const Color(0xFF0B0B0F),
       appBar: AppBar(
-        backgroundColor: bg,
-        title: Text('Channel Info',
-            style: GoogleFonts.poppins(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text('Channel Info'),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -77,184 +140,138 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
                   child: Column(
                     children: [
                       CircleAvatar(
-                        radius: 44,
-                        backgroundColor: navColor,
-                        backgroundImage: (avatarUrl != null &&
-                                avatarUrl.toString().isNotEmpty)
-                            ? NetworkImage(avatarUrl)
-                            : null,
-                        child: (avatarUrl == null ||
-                                avatarUrl.toString().isEmpty)
-                            ? const Icon(Icons.groups,
-                                size: 40, color: Colors.white70)
+                        radius: 48,
+                        backgroundImage:
+                            photo.isNotEmpty ? NetworkImage(photo) : null,
+                        child: photo.isEmpty
+                            ? const Icon(Icons.groups, size: 40)
                             : null,
                       ),
                       const SizedBox(height: 12),
                       Text(
                         name,
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
                         ),
+                      textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$_memberCount members',
-                        style: GoogleFonts.poppins(
-                            color: Colors.white70, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (description.isNotEmpty) ...[
-                  Text('Description',
-                      style: GoogleFonts.poppins(
-                          color: Colors.white70, fontSize: 12)),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: navColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      description,
-                      style: GoogleFonts.poppins(
-                          color: Colors.white, fontSize: 14),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                Text('Invite Link',
-                    style: GoogleFonts.poppins(
-                        color: Colors.white70, fontSize: 12)),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: navColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'btcmorning.com/channel/${widget.channel['id']}',
-                          style: GoogleFonts.poppins(
-                              color: Colors.white70, fontSize: 13),
-                          overflow: TextOverflow.ellipsis,
+                        '$_memberCount subscribers ${String.fromCharCode(183)} $_adminCount admins',
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 13,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.copy,
-                            color: Colors.white70, size: 18),
-                        onPressed: _copyInviteLink,
-                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _statCard('Members', '$_memberCount'),
+                const SizedBox(height: 2)4),
+                _sectionCard(
+                  title: 'Description',
+                  trailing: _isOwner
+                      ? IconButton(
+                          icon: const Icon(Icons.edit, size: 18),
+                          onPressed: _editDescription,
+                        )
+                      : null,
+                  child: Text(
+                    description.isNotEmpty
+                        ? description
+                        : 'No description yet',
+                    style: TextStyle(
+                      color: description.isNotEmpty
+                          ? Colors.white70
+                          : Colors.white38,
+                      fontSize: 14,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _statCard('Admins', '${_adminIds.length}'),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 20),
-                Text('Members',
-                    style: GoogleFonts.poppins(
-                        color: Colors.white70, fontSize: 12)),
-                const SizedBox(height: 6),
-                ..._members.map((m) => _memberTile(m)),
+                const SizedBox(height: 16),
+                _sectionCard(
+                  title: 'Members ($_memberCount)',
+                  child: Column(
+                    children: _members.take(6).map((m) {
+                      final mName = (m['name'] ?? '').toString();
+                      final mPhoto = (m['photo'] ?? '').toString();
+                      final mUid = (m['uid'] ?? '').toString();
+                      final adminIds = List<String>.from(
+                          widget.channel['admin_ids'] ?? []);
+                      final isAdmin = adminIds.contains(mUid);
+
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundImage:
+                              mPhoto.isNotEmpty ? NetworkImage(mPhoto) : null,
+                          child: mPhoto.isEmpty
+                              ? const Icon(Icons.person)
+                              : null,
+                        ),
+                        title: Text(
+                          mName.isNotEmpty ? mName : mUid,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                        subtitle: isAdmin
+                            ? const Text('Admin',
+                                style: TextStyle(
+                                    color: Colors.amber, fontSize: 12))
+                            : null,
+                        trailing: (_isOwner && mUid != widget.currentUid)
+                            ? IconButton(
+                                icon: Icon(
+                                  isAdmin
+                                      ? Icons.remove_moderator
+                                      : Icons.add_moderator,
+                                  size: 20,
+                                ),
+                                onPressed: () => _toggleAdmin(mUid, isAdmin),
+                              )
+                            : null,
+                      );
+                    }).toList(),
+                  ),
+                ),
               ],
             ),
     );
   }
 
-  Widget _statCard(String label, String value) {
+  Widget _sectionCard({
+    required String title,
+    required Widget child,
+    Widget? trailing,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: navColor,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value,
-              style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18)),
-          const SizedBox(height: 2),
-          Text(label,
-              style:
-                  GoogleFonts.poppins(color: Colors.white70, fontSize: 12)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white60,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
+          ),
+          const SizedBox(height: 8),
+          child,
         ],
       ),
-    );
-  }
-
-  Widget _memberTile(dynamic m) {
-    final map = (m is Map) ? Map<String, dynamic>.from(m) : <String, dynamic>{};
-    final uid = map['uid']?.toString() ?? map['user_id']?.toString() ?? '';
-    final displayName =
-        map['name'] ?? map['username'] ?? map['email'] ?? 'User';
-    final avatar = map['avatar_url'];
-    final isOwnerRow = uid == widget.channel['owner_id'];
-    final isAdminRow = _adminIds.contains(uid);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: navColor,
-            backgroundImage:
-                (avatar != null && avatar.toString().isNotEmpty)
-                    ? NetworkImage(avatar)
-                    : null,
-            child: (avatar == null || avatar.toString().isEmpty)
-                ? const Icon(Icons.person, size: 16, color: Colors.white70)
-                : null,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              displayName.toString(),
-              style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          if (isOwnerRow)
-            _badge('Owner', Colors.amber)
-          else if (isAdminRow)
-            _badge('Admin', Colors.lightBlueAccent),
-        ],
-      ),
-    );
-  }
-
-  Widget _badge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(text,
-          style: GoogleFonts.poppins(
-              color: color, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }
 }

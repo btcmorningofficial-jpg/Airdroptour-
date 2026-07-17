@@ -519,6 +519,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
+        titleSpacing: 0,
         backgroundColor: bg,
         title: Row(children: [
           GestureDetector(
@@ -564,6 +565,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         ]),
             actions: [
               TextButton(
+        style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                 onPressed: _toggleSubscription,
                 child: Text(
                   _isSubscribed ? 'Leave' : 'Join',
