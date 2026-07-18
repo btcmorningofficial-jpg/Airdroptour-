@@ -46,7 +46,7 @@ class _ChannelSettingsPageState extends State<ChannelSettingsPage> {
       if (mounted) Navigator.pop(context, result[1]);
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result[1]?.toString() ?? 'Guncellenemedi')),
+        SnackBar(content: Text(result[1]?.toString() ?? 'Update failed')),
       );
     }
   }
@@ -91,7 +91,7 @@ class _ChannelSettingsPageState extends State<ChannelSettingsPage> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Aciklama', style: TextStyle(color: Colors.white70)),
+            const Text('Description', style: TextStyle(color: Colors.white70)),
             const SizedBox(height: 6),
             TextField(
               controller: _descController,
