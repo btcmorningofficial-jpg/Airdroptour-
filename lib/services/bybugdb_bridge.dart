@@ -406,7 +406,7 @@ class ByBugChannel {
       if (j['status'] == 1) {
         return [1, j['channel']];
       }
-      return [0, j['message'] ?? 'Kanal resmi guncellenemedi'];
+      return [0, j['message'] ?? 'Failed to update channel photo'];
     } catch (e) {
       return [0, 'Sunucuya baglanilamadi'];
     }
@@ -540,7 +540,7 @@ class ByBugChannel {
       if (j['status'] == 1) {
         return [1, j['channel']];
       }
-      return [0, j['message'] ?? 'Kanal guncellenemedi'];
+      return [0, j['message'] ?? 'Failed to update channel'];
     } catch (e) {
       return [0, 'Sunucuya baglanilamadi'];
     }
@@ -561,7 +561,7 @@ class ByBugChannel {
       if (j['status'] == 1) {
         return [1, j['channel']];
       }
-      return [0, j['message'] ?? 'Yonetici atanamadi'];
+      return [0, j['message'] ?? 'Failed to assign admin'];
     } catch (e) {
       return [0, 'Sunucuya baglanilamadi'];
     }
@@ -582,7 +582,7 @@ class ByBugChannel {
       if (j['status'] == 1) {
         return [1, j['channel']];
       }
-      return [0, j['message'] ?? 'Yonetici kaldirilamadi'];
+      return [0, j['message'] ?? 'Failed to remove admin'];
     } catch (e) {
       return [0, 'Sunucuya baglanilamadi'];
     }

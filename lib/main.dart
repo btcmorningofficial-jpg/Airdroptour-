@@ -23,7 +23,7 @@ void main() async {
   runZonedGuarded(() {
     runApp(MyApp(isSignedIn: isSignedIn));
   }, (error, stack) {
-    debugPrint('YAKALANAN HATA: $error');
+    debugPrint('CAUGHT ERROR: $error');
   });
 }
 
