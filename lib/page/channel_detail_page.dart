@@ -600,6 +600,46 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       ),
       body: Column(
         children: [
+          if (_posts.any((p) => p['pinned'] == true))
+            Builder(builder: (context) {
+              final pinnedPost =
+                  _posts.firstWhere((p) => p['pinned'] == true);
+              final preview =
+                  (pinnedPost['content'] ?? '').toString().replaceAll('\n', ' ');
+              return Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                color: navColor,
+                child: Row(
+                  children: [
+                    const Icon(Icons.push_pin, size: 16, color: Colors.amber),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Pinned Message',
+                            style: TextStyle(
+                              color: Colors.amber,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            preview.isNotEmpty ? preview : 'Voice message',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: textColor, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
@@ -624,22 +664,6 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (post['pinned'] == true)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.push_pin, size: 14, color: Colors.amber),
-                                const SizedBox(width: 4),
-                                const Text('Pinned',
-                                    style: TextStyle(
-                                        color: Colors.amber,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                          ),
                         post['type'] == 'audio'
                             ? Row(
                                 mainAxisSize: MainAxisSize.min,
