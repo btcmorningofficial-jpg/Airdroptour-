@@ -168,7 +168,7 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 2)4),
+                const SizedBox(height: 24),
                 _sectionCard(
                   title: 'Description',
                   trailing: _isOwner
