@@ -36,6 +36,8 @@ class _YouProfilePageState extends State<YouProfilePage> {
     super.initState();
     Future.delayed(Duration.zero, () async {
       await YouProfileData.getMyProfile(widget.uid);
+      if (!mounted) return;
+      await AdminServices.getHomeCryptos(context);
       for (var element in YouProfileData.cripto()) {
         if (AdminServices.cryptosNames.contains(element["image"])) {
           profileCrypto.value.add(
