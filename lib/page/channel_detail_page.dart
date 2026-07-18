@@ -42,6 +42,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   bool _isRecording = false;
   bool _isUploadingVoice = false;
   String? _playingPostId;
+  final Map<String, GlobalKey> _postKeys = {};
 
   bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
 
@@ -606,7 +607,20 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                   _posts.firstWhere((p) => p['pinned'] == true);
               final preview =
                   (pinnedPost['content'] ?? '').toString().replaceAll('\n', ' ');
-              return Container(
+              return GestureDetector(
+          onTap: () {
+            final key = _postKeys[pinnedPost['id'].toString()];
+            final targetContext = key?.currentContext;
+            if (targetContext != null) {
+              Scrollable.ensureVisible(
+                targetContext,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                alignment: 0.5,
+              );
+            }
+          },
+          child: Container(
                 width: double.infinity,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -638,7 +652,8 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                     ),
                   ],
                 ),
-              );
+              ),
+        );
             }),
           Expanded(
             child: _loading
@@ -650,7 +665,12 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                         itemCount: _sortedPosts.length,
                         itemBuilder: (context, index) {
                           final post = _sortedPosts[index];
+          final postKey = _postKeys.putIfAbsent(
+            post['id'].toString(),
+            () => GlobalKey(),
+          );
                           return GestureDetector(
+            key: postKey,
                             onLongPress:
                                 _isOwner ? () => _showPostMenu(post) : null,
                             child: Container(
