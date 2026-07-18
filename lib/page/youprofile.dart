@@ -8,6 +8,7 @@ import 'package:airdrop/tools/navigator.dart';
 import 'package:airdrop/widget/bottom.dart';
 import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/sizer.dart';
+import 'package:airdrop/widget/auto_scroll_crypto_row.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
@@ -34,6 +35,7 @@ class _YouProfilePageState extends State<YouProfilePage> {
   void initState() {
     super.initState();
     Future.delayed(Duration.zero, () async {
+      await YouProfileData.getMyProfile(widget.uid);
       for (var element in YouProfileData.cripto()) {
         if (AdminServices.cryptosNames.contains(element["image"])) {
           profileCrypto.value.add(
@@ -282,16 +284,9 @@ class _YouProfilePageState extends State<YouProfilePage> {
                               padding: const EdgeInsets.all(20),
                               child: h3("•", color: textColor.withOpacity(0.5)),
                             ),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: CosmosScroller(
-                                    scrollDirection: Axis.horizontal,
-                                    children: profileCrypto.value,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            AutoScrollCryptoRow(
+          children: profileCrypto.value,
+        ),
                             Column(children: profilePostsYou.value),
                           ],
                         ),
