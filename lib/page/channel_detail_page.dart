@@ -128,7 +128,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       await _loadMembers();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result[1]?.toString() ?? 'Islem basarisiz')),
+        SnackBar(content: Text(result[1]?.toString() ?? 'Action failed')),
       );
     }
   }
@@ -140,7 +140,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         child: SizedBox(
           height: 400,
           child: _members.isEmpty
-              ? const Center(child: Text('Henuz uye yok'))
+              ? const Center(child: Text('No members yet'))
               : ListView.builder(
                   itemCount: _members.length,
                   itemBuilder: (context, index) {
@@ -156,7 +156,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                         child: photo.isEmpty ? const Icon(Icons.person) : null,
                       ),
                       title: Text(name.isNotEmpty ? name : memberUid),
-                      subtitle: isAdmin ? const Text('Yonetici', style: TextStyle(color: Colors.amber, fontSize: 12)) : null,
+                      subtitle: isAdmin ? const Text('Admin', style: TextStyle(color: Colors.amber, fontSize: 12)) : null,
                       trailing: (_isOwner && memberUid != widget.currentUid)
                           ? IconButton(
                               icon: Icon(isAdmin ? Icons.remove_moderator : Icons.add_moderator),
@@ -172,7 +172,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                                   _showMembersList();
                                 } else if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(result[1]?.toString() ?? 'Islem basarisiz')),
+                                    SnackBar(content: Text(result[1]?.toString() ?? 'Action failed')),
                                   );
                                 }
                               },
@@ -409,7 +409,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
           children: [
             ListTile(
               leading: Icon(post['pinned'] == true ? Icons.push_pin_outlined : Icons.push_pin),
-              title: Text(post['pinned'] == true ? 'Sabitlemeyi kaldir' : 'Sabitle'),
+              title: Text(post['pinned'] == true ? 'Unpin' : 'Pin'),
               onTap: () {
                 Navigator.pop(ctx);
                 _togglePin(post);
@@ -467,7 +467,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Message'),
-        content: const Text('Bu mesaji silmek istediginize emin misiniz?'),
+        content: const Text('Are you sure you want to delete this message?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
@@ -491,7 +491,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     final newText = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Mesaji duzenle'),
+        title: const Text('Edit message'),
         content: TextField(controller: controller, maxLines: 5, autofocus: true),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
