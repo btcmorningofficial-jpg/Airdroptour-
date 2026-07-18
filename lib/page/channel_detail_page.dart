@@ -620,40 +620,57 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                               color: navColor,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (post['pinned'] == true)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                post['type'] == 'audio'
-                                ? Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        onPressed: () => _togglePlay(
-                                          post['id'].toString(),
-                                          post['content']?.toString() ?? '',
-                                        ),
-                                        icon: Icon(
-                                          _playingPostId ==
-                                                  post['id'].toString()
-                                              ? Icons.stop_circle
-                                              : Icons.play_circle,
-                                          color: textColor,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Voice message',
-                                        style: TextStyle(color: textColor),
-                                      ),
-                                    ],
-                                  )
-                                : Text(
-                                    post['content']?.toString() ?? '',
-                                    style: TextStyle(color: textColor),
-                                  ),
-                                _buildReactions(post),
+                                const Icon(Icons.push_pin, size: 14, color: Colors.amber),
+                                const SizedBox(width: 4),
+                                const Text('Pinned',
+                                    style: TextStyle(
+                                        color: Colors.amber,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600)),
                               ],
                             ),
+                          ),
+                        post['type'] == 'audio'
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    onPressed: () => _togglePlay(
+                                      post['id'].toString(),
+                                      post['content']?.toString() ?? '',
+                                    ),
+                                    icon: Icon(
+                                      _playingPostId ==
+                                              post['id'].toString()
+                                          ? Icons.stop_circle
+                                          : Icons.play_circle,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Voice message',
+                                    style: TextStyle(color: textColor),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                post['content']?.toString() ?? '',
+                                style: TextStyle(color: textColor, height: 1.35),
+                              ),
+                        const SizedBox(height: 8),
+                        _buildReactions(post),
+                      ],
+                    ),
                   ),
                           );
                         },
