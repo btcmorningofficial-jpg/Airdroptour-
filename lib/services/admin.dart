@@ -262,6 +262,7 @@ class AdminServices extends ChangeNotifier {
     // Borsa linklerini arka planda yükle (kart açıldığında hazır olsun).
     getExchangeLinks(context);
     var crypto = await ByBugDatabase.getAll("crypto");
+    debugPrint("DEBUG getHomeCryptos: crypto.length=${crypto.length}");
     cryptosNames.clear();
     List<Widget> tempCrypto = [];
     List<Widget> tempCryptoExplorer = [];

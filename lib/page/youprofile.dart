@@ -39,6 +39,7 @@ class _YouProfilePageState extends State<YouProfilePage> {
       if (!mounted) return;
       await AdminServices.getHomeCryptos(context);
       profileCrypto.value.clear();
+    debugPrint("DEBUG youprofile: YouProfileData.cripto().length=${YouProfileData.cripto().length}, cryptosNames.length=${AdminServices.cryptosNames.length}");
     for (var element in YouProfileData.cripto()) {
         if (AdminServices.cryptosNames.contains(element["image"])) {
           profileCrypto.value.add(
