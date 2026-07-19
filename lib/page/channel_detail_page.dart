@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:airdrop/theme/color.dart';
+import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/page/channel_settings_page.dart';
 
