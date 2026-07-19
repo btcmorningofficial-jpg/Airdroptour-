@@ -41,8 +41,10 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   final _player = AudioPlayer();
   bool _isRecording = false;
   bool _isUploadingVoice = false;
+  bool _isUploadingImage = false;
   String? _playingPostId;
   final Map<String, GlobalKey> _postKeys = {};
+  final ScrollController _scrollController = ScrollController();
 
   bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
 
@@ -160,6 +162,17 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                       subtitle: isAdmin ? const Text('Admin', style: TextStyle(color: Colors.amber, fontSize: 12)) : null,
                       trailing: (_isOwner && memberUid != widget.currentUid)
                           ? IconButton(
+              onPressed: _isUploadingImage ? null : _sendImage,
+              icon: _isUploadingImage
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(Icons.image_outlined, color: textColor),
+            ),
+            const SizedBox(width: 10),
+            IconButton(
                               icon: Icon(isAdmin ? Icons.remove_moderator : Icons.add_moderator),
                               onPressed: () async {
                                 final result = isAdmin
@@ -204,6 +217,32 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result[1]?.toString() ?? 'Failed to post')),
+      );
+    }
+  }
+
+  Future<void> _sendImage() async {
+    final path = await pickImage();
+    if (path == null) return;
+    setState(() => _isUploadingImage = true);
+    final url = await ByBugStorage.uploadFile(path);
+    setState(() => _isUploadingImage = false);
+    if (url == null || url.startsWith('ERR:')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Resim yuklenemedi')),
+        );
+      }
+      return;
+    }
+    final result = await ByBugChannel.postToChannel(
+      channelId: widget.channel['id'],
+      content: url,
+      type: 'image',
+    );
+    if (result[0] != 1 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result[1]?.toString() ?? 'Paylasim yapilamadi')),
       );
     }
   }
@@ -608,7 +647,9 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
               final preview =
                   (pinnedPost['content'] ?? '').toString().replaceAll('\n', ' ');
               return GestureDetector(
-          onTap: () {
+          onTap: () async {
+          final pinnedIndex = _sortedPosts.indexWhere((p) => p['id'] == pinnedPost['id']);
+          void tryScroll() {
             final key = _postKeys[pinnedPost['id'].toString()];
             final targetContext = key?.currentContext;
             if (targetContext != null) {
@@ -619,7 +660,19 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                 alignment: 0.5,
               );
             }
-          },
+          }
+          final key = _postKeys[pinnedPost['id'].toString()];
+          if (key?.currentContext == null && pinnedIndex != -1 && _scrollController.hasClients) {
+            final estimatedOffset = pinnedIndex * 120.0;
+            await _scrollController.animateTo(
+              estimatedOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+            await Future.delayed(const Duration(milliseconds: 100));
+          }
+          tryScroll();
+        },
           child: Container(
                 width: double.infinity,
                 padding:
@@ -661,7 +714,8 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                 : _posts.isEmpty
                     ? const Center(child: Text('No posts yet'))
                     : ListView.builder(
-                        padding: const EdgeInsets.all(12),
+                        controller: _scrollController,
+                padding: const EdgeInsets.all(12),
                         itemCount: _sortedPosts.length,
                         itemBuilder: (context, index) {
                           final post = _sortedPosts[index];
@@ -707,7 +761,15 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                                   ),
                                 ],
                               )
-                            : Text(
+                            : post['type'] == 'image'
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: AirdroptourImage(
+                          post['content']?.toString() ?? '',
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Text(
                                 post['content']?.toString() ?? '',
                                 style: TextStyle(color: textColor, height: 1.35),
                               ),
