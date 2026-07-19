@@ -38,7 +38,8 @@ class _YouProfilePageState extends State<YouProfilePage> {
       await YouProfileData.getMyProfile(widget.uid);
       if (!mounted) return;
       await AdminServices.getHomeCryptos(context);
-      for (var element in YouProfileData.cripto()) {
+      profileCrypto.value.clear();
+    for (var element in YouProfileData.cripto()) {
         if (AdminServices.cryptosNames.contains(element["image"])) {
           profileCrypto.value.add(
             CryptoWidget(
@@ -60,7 +61,7 @@ class _YouProfilePageState extends State<YouProfilePage> {
         social.add([value["name"], value["url"]]);
         socialText.add(value["name"]);
       }
-      Post.getProfileYouPosts(YouProfileData.uid());
+      Post.getProfileYouPosts(widget.uid);
     });
   }
 

@@ -3,6 +3,7 @@ import 'package:airdrop/page/youprofile.dart';
 import 'package:airdrop/services/message.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
+import 'package:airdrop/widget/snack.dart';
 import 'package:airdrop/tools/get_time.dart';
 import 'package:airdrop/tools/navigator.dart';
 import 'package:airdrop/widget/image.dart';
@@ -73,10 +74,17 @@ class _MessagePageState extends State<MessagePage> {
                         child: Icon(Icons.arrow_back_ios_new),
                       ),
                       GestureDetector(
-                        onTap: () {
-                          push(context, YouProfilePage(uid: widget.uid));
-                        },
-                        child: Column(
+                onTap: () async {
+                  try {
+                    await YouProfileData.getMyProfile(widget.uid);
+                    if (!context.mounted) return;
+                    push(context, YouProfilePage(uid: widget.uid));
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    getSuccessSnack(context, "Profil acilamadi: $e");
+                  }
+                },
+                child: Column(
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadiusGeometry.only(
