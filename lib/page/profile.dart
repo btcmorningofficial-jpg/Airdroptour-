@@ -41,9 +41,13 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    MyProfileData.getMyProfile();
-    for (var element in MyProfileData.cripto()) {
-      if (AdminServices.cryptosNames.contains(element["image"])) {
+    Future.delayed(Duration.zero, () async {
+      await MyProfileData.getMyProfile();
+      if (!mounted) return;
+      await AdminServices.getHomeCryptos(context);
+      profileCrypto.value.clear();
+      for (var element in MyProfileData.cripto()) {
+        if (AdminServices.cryptosNames.contains(element["image"])) {
         profileCrypto.value.add(
           CryptoWidget(
             id: "id",
@@ -63,6 +67,7 @@ class _ProfilePageState extends State<ProfilePage> {
       socialText.add(value["name"]);
     }
     Post.getProfilePosts(MyProfileData.uid());
+    });
   }
 
   @override
