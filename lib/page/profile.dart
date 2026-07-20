@@ -42,6 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     Future.delayed(Duration.zero, () async {
+      try {
       await MyProfileData.getMyProfile();
       if (!mounted) return;
       await AdminServices.getHomeCryptos(context);
@@ -67,6 +68,17 @@ class _ProfilePageState extends State<ProfilePage> {
       socialText.add(value["name"]);
     }
     Post.getProfilePosts(MyProfileData.uid());
+      } catch (e, st) {
+        debugPrint("DEBUG profile hata: $e\n$st");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("DEBUG HATA: $e"),
+              duration: const Duration(seconds: 20),
+            ),
+          );
+        }
+      }
     });
   }
 
