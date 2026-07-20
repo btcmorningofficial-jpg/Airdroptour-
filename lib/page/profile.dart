@@ -554,13 +554,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: SizedBox(
-                                    height: 80,
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(children: profileCrypto.value),
-                                    ),
-                                  ),
+                                  child: AutoScrollCryptoRow(
+            children: profileCrypto.value,
+          ),
                                 ),
                               ],
                             ),

@@ -287,9 +287,12 @@ class _YouProfilePageState extends State<YouProfilePage> {
                               padding: const EdgeInsets.all(20),
                               child: h3("•", color: textColor.withOpacity(0.5)),
                             ),
-                            AutoScrollCryptoRow(
-          children: profileCrypto.value,
-        ),
+                            SizedBox(
+                  width: double.infinity,
+                  child: AutoScrollCryptoRow(
+                    children: profileCrypto.value,
+                  ),
+                ),
                             Column(children: profilePostsYou.value),
                           ],
                         ),
