@@ -45,9 +45,21 @@ class _ProfilePageState extends State<ProfilePage> {
       await MyProfileData.getMyProfile();
       if (!mounted) return;
       await AdminServices.getHomeCryptos(context);
+      var cryptoPoolRaw = await ByBugDatabase.getAll("crypto");
+      List<Map<String, dynamic>> cryptoPool = [];
+      for (var element in cryptoPoolRaw) {
+        Map<String, dynamic> val = Map<String, dynamic>.from(
+          element["value"] ?? {},
+        );
+        if ((val["name"] ?? "").toString().isEmpty) continue;
+        cryptoPool.add(val);
+      }
+      var finalCryptos = fillToThreeCryptos(
+        MyProfileData.cripto(),
+        cryptoPool,
+      );
       profileCrypto.value.clear();
-    for (var element in MyProfileData.cripto()) {
-        if (true) {
+      for (var element in finalCryptos) {
         profileCrypto.value.add(
           CryptoWidget(
             id: "id",
@@ -57,8 +69,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         );
       }
-    }
-    profileCrypto.notifyListeners();
+      profileCrypto.notifyListeners();
     var socialData = MyProfileData.social();
     social.clear();
     for (var element in socialData.keys) {

@@ -206,3 +206,33 @@ class YouProfileData extends ChangeNotifier {
     return data.value["data"]?["status"] ?? "active";
   }
 }
+
+List<Map<String, dynamic>> fillToThreeCryptos(
+  List raw,
+  List<Map<String, dynamic>> pool,
+) {
+  List<Map<String, dynamic>> result = [];
+  for (var element in raw) {
+    if (element is Map) {
+      result.add(Map<String, dynamic>.from(element));
+    }
+  }
+  if (result.length > 3) {
+    result = result.sublist(0, 3);
+  } else if (result.length < 3) {
+    final usedNames = result.map((e) => e["name"]).toSet();
+    final candidates = pool
+        .where((c) => !usedNames.contains(c["name"]))
+        .toList();
+    candidates.shuffle();
+    for (var c in candidates) {
+      if (result.length >= 3) break;
+      result.add({
+        "image": c["image"],
+        "name": c["name"],
+        "details": c["details"],
+      });
+    }
+  }
+  return result;
+}

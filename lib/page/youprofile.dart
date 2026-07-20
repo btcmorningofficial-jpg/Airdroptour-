@@ -39,18 +39,8 @@ class _YouProfilePageState extends State<YouProfilePage> {
       if (!mounted) return;
       await AdminServices.getHomeCryptos(context);
       profileCrypto.value.clear();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "DEBUG: cripto=${YouProfileData.cripto().length} cryptosNames=${AdminServices.cryptosNames.length}",
-          ),
-          duration: const Duration(seconds: 10),
-        ),
-      );
-    }
     for (var element in YouProfileData.cripto()) {
-        if (AdminServices.cryptosNames.contains(element["image"])) {
+        if (true) {
           profileCrypto.value.add(
             CryptoWidget(
               readOnly: true,
