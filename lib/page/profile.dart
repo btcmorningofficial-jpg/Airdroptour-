@@ -45,49 +45,18 @@ class _ProfilePageState extends State<ProfilePage> {
       await MyProfileData.getMyProfile();
       if (!mounted) return;
       await AdminServices.getHomeCryptos(context);
-      try {
-        var cryptoPoolRaw = await ByBugDatabase.getAll("crypto");
-        List<Map<String, dynamic>> cryptoPool = [];
-        for (var element in cryptoPoolRaw) {
-          Map<String, dynamic> val = Map<String, dynamic>.from(
-            element["value"] ?? {},
-          );
-          if ((val["name"] ?? "").toString().isEmpty) continue;
-          cryptoPool.add(val);
-        }
-        var finalCryptos = fillToThreeCryptos(
-          MyProfileData.cripto(),
-          cryptoPool,
+      profileCrypto.value.clear();
+      for (var element in MyProfileData.cripto()) {
+        profileCrypto.value.add(
+          CryptoWidget(
+            id: "id",
+            photo: element["image"],
+            name: element["name"],
+            details: element["details"],
+          ),
         );
-        profileCrypto.value.clear();
-        for (var element in finalCryptos) {
-          profileCrypto.value.add(
-            CryptoWidget(
-              id: "id",
-              photo: element["image"],
-              name: element["name"],
-              details: element["details"],
-            ),
-          );
-        }
-        profileCrypto.notifyListeners();
-      } catch (e) {
-        debugPrint("CRYPTO FILL ERROR: $e");
-        profileCrypto.value.clear();
-        for (var element in MyProfileData.cripto()) {
-          if (element is Map) {
-            profileCrypto.value.add(
-              CryptoWidget(
-                id: "id",
-                photo: element["image"],
-                name: element["name"],
-                details: element["details"],
-              ),
-            );
-          }
-        }
-        profileCrypto.notifyListeners();
       }
+      profileCrypto.notifyListeners();
     var socialData = MyProfileData.social();
     social.clear();
     for (var element in socialData.keys) {
@@ -576,6 +545,10 @@ class _ProfilePageState extends State<ProfilePage> {
             children: profileCrypto.value,
           ),
                                 ),
+                Text(
+                  "DEBUG cripto=${MyProfileData.cripto().length} profileCrypto=${profileCrypto.value.length}",
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                ),
                               ],
                             ),
                             Column(children: profilePosts.value), const SizedBox(height: 100),
