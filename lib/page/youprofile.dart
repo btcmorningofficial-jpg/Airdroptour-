@@ -37,7 +37,6 @@ class _YouProfilePageState extends State<YouProfilePage> {
     Future.delayed(Duration.zero, () async {
       await YouProfileData.getMyProfile(widget.uid);
       if (!mounted) return;
-      await AdminServices.getHomeCryptos(context);
       profileCrypto.value.clear();
     for (var element in YouProfileData.cripto()) {
         if (true) {

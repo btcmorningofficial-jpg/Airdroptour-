@@ -44,7 +44,6 @@ class _ProfilePageState extends State<ProfilePage> {
     Future.delayed(Duration.zero, () async {
       await MyProfileData.getMyProfile();
       if (!mounted) return;
-      await AdminServices.getHomeCryptos(context);
       profileCrypto.value.clear();
       for (var element in MyProfileData.cripto()) {
         profileCrypto.value.add(
