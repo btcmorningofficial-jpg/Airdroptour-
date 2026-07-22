@@ -37,19 +37,30 @@ class _YouProfilePageState extends State<YouProfilePage> {
     Future.delayed(Duration.zero, () async {
       await YouProfileData.getMyProfile(widget.uid);
       if (!mounted) return;
+      var cryptoPoolRaw = await ByBugDatabase.getAll("crypto");
+      List<Map<String, dynamic>> cryptoPool = [];
+      for (var element in cryptoPoolRaw) {
+        Map<String, dynamic> val = Map<String, dynamic>.from(
+          element["value"] ?? {},
+        );
+        if ((val["name"] ?? "").toString().isEmpty) continue;
+        cryptoPool.add(val);
+      }
+      var finalCryptos = fillToThreeCryptos(
+        YouProfileData.cripto(),
+        cryptoPool,
+      );
       profileCrypto.value.clear();
-    for (var element in YouProfileData.cripto()) {
-        if (true) {
-          profileCrypto.value.add(
-            CryptoWidget(
-              readOnly: true,
-              id: "id",
-              photo: element["image"],
-              name: element["name"],
-              details: element["details"],
-            ),
-          );
-        }
+      for (var element in finalCryptos) {
+        profileCrypto.value.add(
+          CryptoWidget(
+            readOnly: true,
+            id: "id",
+            photo: element["image"],
+            name: element["name"],
+            details: element["details"],
+          ),
+        );
       }
       profileCrypto.notifyListeners();
       var socialData = YouProfileData.social();
