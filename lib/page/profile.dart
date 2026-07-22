@@ -62,11 +62,37 @@ class _ProfilePageState extends State<ProfilePage> {
       profileCrypto.value.clear();
       for (var element in finalCryptos) {
         profileCrypto.value.add(
-          CryptoWidget(
-            id: "id",
-            photo: element["image"],
-            name: element["name"],
-            details: element["details"],
+          Container(
+            width: 70,
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipOval(
+                  child: Image.network(
+                    (element["image"] ?? "").toString(),
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) => Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  (element["name"] ?? "").toString(),
+                  style: const TextStyle(fontSize: 12, color: Colors.white),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         );
       }
@@ -551,7 +577,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             Padding(
                               padding: const EdgeInsets.all(20),
-                              child: h3("COUNT: ${profileCrypto.value.length}", color: textColor.withOpacity(0.5)),
+                              child: h3("•", color: textColor.withOpacity(0.5)),
                             ),
                             Row(
                               children: [

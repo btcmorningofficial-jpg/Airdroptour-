@@ -55,12 +55,37 @@ class _YouProfilePageState extends State<YouProfilePage> {
       profileCrypto.value.clear();
       for (var element in finalCryptos) {
         profileCrypto.value.add(
-          CryptoWidget(
-            readOnly: true,
-            id: "id",
-            photo: element["image"],
-            name: element["name"],
-            details: element["details"],
+          Container(
+            width: 70,
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipOval(
+                  child: Image.network(
+                    (element["image"] ?? "").toString(),
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) => Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  (element["name"] ?? "").toString(),
+                  style: const TextStyle(fontSize: 12, color: Colors.white),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         );
       }
