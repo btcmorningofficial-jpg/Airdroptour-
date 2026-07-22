@@ -545,10 +545,6 @@ class _ProfilePageState extends State<ProfilePage> {
             children: profileCrypto.value,
           ),
                                 ),
-                Text(
-                  "DEBUG cripto=${MyProfileData.cripto().length} profileCrypto=${profileCrypto.value.length}",
-                  style: const TextStyle(color: Colors.red, fontSize: 12),
-                ),
                               ],
                             ),
                             Column(children: profilePosts.value), const SizedBox(height: 100),
