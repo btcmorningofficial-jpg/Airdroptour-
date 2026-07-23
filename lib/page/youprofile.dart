@@ -45,7 +45,6 @@ class _YouProfilePageState extends State<YouProfilePage> {
         );
         if ((val["name"] ?? "").toString().isEmpty) continue;
           if ((val["image"] ?? "").toString().isEmpty) continue;
-          if ((val["details"] ?? "").toString().isEmpty) continue;
         cryptoPool.add(val);
       }
       var finalCryptos = fillToThreeCryptos(
