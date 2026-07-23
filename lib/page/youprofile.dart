@@ -64,7 +64,7 @@ class _YouProfilePageState extends State<YouProfilePage> {
               children: [
                 ClipOval(
                   child: AirdroptourImage(
-                    photo: img.startsWith("http") ? img : "assets/img/soru.png",
+                    img.startsWith("http") ? img : "assets/img/soru.png",
                     fit: BoxFit.cover,
                     height: 48,
                     width: 48,
