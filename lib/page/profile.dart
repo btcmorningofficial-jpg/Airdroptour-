@@ -132,7 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ),
                                   ),
                                   SizedBox(width: 4),
-                                  h1("My Profile"),
+                                  h1("My Profile V2"),
                                 ],
                               ),
                             ),
