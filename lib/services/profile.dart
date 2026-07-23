@@ -127,6 +127,8 @@ class MyProfileData extends ChangeNotifier {
     if (myUID == null) return;
     if (myUID.trim().isEmpty) return;
     var datas = await ByBugDatabase.get(bucket, myUID);
+    datas["value"] ??= <String, dynamic>{};
+    datas["value"]["data"] ??= <String, dynamic>{};
     if (photo != null) datas["value"]["photo"] = photo;
     if (name != null) datas["value"]["name"] = name;
     if (bio != null) datas["value"]["data"]["bio"] = bio;
