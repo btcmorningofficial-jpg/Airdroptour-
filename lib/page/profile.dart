@@ -567,12 +567,17 @@ class _ProfilePageState extends State<ProfilePage> {
                               padding: const EdgeInsets.all(20),
                               child: h3("COINSAYISI: " + profileCrypto.value.length.toString(), color: Colors.red),
                             ),
-                            SizedBox(
-  width: widthSizer(context),
-  child: AutoScrollCryptoRow(
-    children: profileCrypto.value,
-  ),
-),
+                            ValueListenableBuilder<List<Widget>>(
+              valueListenable: profileCrypto,
+              builder: (context, cryptoChildren, _) {
+                return SizedBox(
+                  width: widthSizer(context),
+                  child: AutoScrollCryptoRow(
+                    children: cryptoChildren,
+                  ),
+                );
+              },
+            ),
                             Column(children: profilePosts.value), const SizedBox(height: 100),
                           ],
                         ),
