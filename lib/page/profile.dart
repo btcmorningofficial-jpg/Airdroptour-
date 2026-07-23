@@ -565,7 +565,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             Padding(
                               padding: const EdgeInsets.all(20),
-                              child: h3("•", color: textColor.withOpacity(0.5)),
+                              child: h3("COINSAYISI: " + profileCrypto.value.length.toString(), color: Colors.red),
                             ),
                             Row(
                               children: [
