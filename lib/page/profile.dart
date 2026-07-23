@@ -61,6 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       profileCrypto.value.clear();
       for (var element in finalCryptos) {
+        final img = (element["image"] ?? "").toString();
         profileCrypto.value.add(
           Container(
             width: 70,
@@ -69,19 +70,11 @@ class _ProfilePageState extends State<ProfilePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ClipOval(
-                  child: Image.network(
-                    (element["image"] ?? "").toString(),
-                    width: 48,
-                    height: 48,
+                  child: AirdroptourImage(
+                    photo: img.startsWith("http") ? img : "assets/img/soru.png",
                     fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => Container(
-                      width: 48,
-                      height: 48,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey,
-                      ),
-                    ),
+                    height: 48,
+                    width: 48,
                   ),
                 ),
                 const SizedBox(height: 4),
