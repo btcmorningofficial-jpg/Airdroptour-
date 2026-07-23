@@ -312,12 +312,17 @@ class _YouProfilePageState extends State<YouProfilePage> {
                               padding: const EdgeInsets.all(20),
                               child: h3("•", color: textColor.withOpacity(0.5)),
                             ),
-                            SizedBox(
+                            ValueListenableBuilder<List<Widget>>(
+              valueListenable: profileCrypto,
+              builder: (context, cryptoChildren, _) {
+                return SizedBox(
                   width: double.infinity,
                   child: AutoScrollCryptoRow(
-                    children: profileCrypto.value,
+                    children: cryptoChildren,
                   ),
-                ),
+                );
+              },
+            ),
                             Column(children: profilePostsYou.value),
                           ],
                         ),
