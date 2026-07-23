@@ -53,30 +53,26 @@ class _YouProfilePageState extends State<YouProfilePage> {
       );
       profileCrypto.value.clear();
       for (var element in finalCryptos) {
-        final img = (element["image"] ?? "").toString();
         profileCrypto.value.add(
           Container(
             width: 70,
+            height: 70,
             margin: const EdgeInsets.symmetric(horizontal: 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClipOval(
-                  child: AirdroptourImage(
-                    img.startsWith("http") ? img : "assets/img/soru.png",
-                    fit: BoxFit.cover,
-                    height: 48,
-                    width: 48,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  (element["name"] ?? "").toString(),
-                  style: const TextStyle(fontSize: 12, color: Colors.white),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(35),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              (element["name"] ?? "?").toString(),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         );
