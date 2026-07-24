@@ -103,7 +103,7 @@ class _YouProfilePageState extends State<YouProfilePage> {
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: AdminServices.exchangeLinks.entries.map((entry) {
+                          children: CryptoWidget.exchangeLinks.entries.map((entry) {
                             return GestureDetector(
                               onTap: () async {
                                 final uri = Uri.tryParse(entry.value);
