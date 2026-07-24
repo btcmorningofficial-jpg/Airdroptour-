@@ -1,6 +1,7 @@
 import 'package:airdrop/page/edit.dart';
 import 'package:airdrop/page/login.dart';
 import 'package:airdrop/services/admin.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:airdrop/services/post.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
@@ -98,6 +99,35 @@ class _YouProfilePageState extends State<YouProfilePage> {
                         ),
                         const SizedBox(height: 12),
                         subP((element["details"] ?? "").toString()),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: AdminServices.exchangeLinks.entries.map((entry) {
+                            return GestureDetector(
+                              onTap: () async {
+                                final uri = Uri.tryParse(entry.value);
+                                if (uri != null) {
+                                  await launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: defaultColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: h5(entry.key),
+                              ),
+                            );
+                          }).toList(),
+                        ),
                       ],
                     ),
                   );
