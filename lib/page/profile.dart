@@ -63,52 +63,16 @@ class _ProfilePageState extends State<ProfilePage> {
         profileCrypto.value.add(
           GestureDetector(
             onTap: () {
-              showModalBottomSheet(
-                context: context,
-                backgroundColor: Colors.black,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                builder: (context) {
-                  return Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            ClipOval(
-                              child: (element["image"] ?? "").toString().isNotEmpty
-                                  ? AirdroptourImage(
-                                      (element["image"]).toString(),
-                                      width: 40,
-                                      height: 40,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Container(
-                                      width: 40,
-                                      height: 40,
-                                      color: Colors.orange,
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        (element["name"] ?? "?").toString(),
-                                        style: const TextStyle(fontSize: 10, color: Colors.black),
-                                      ),
-                                    ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: h3((element["name"] ?? "").toString()),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        subP((element["details"] ?? "").toString()),
-                      ],
-                    ),
-                  );
-                },
+              AdminServices.showDetailDialog(
+                context,
+                photo: (element["image"] ?? "").toString(),
+                name: (element["name"] ?? "").toString(),
+                details: (element["details"] ?? "").toString(),
+                website: (element["website"] ?? "").toString().isNotEmpty
+                    ? (element["website"]).toString()
+                    : null,
+              );
+            },
               );
             },
             child: Container(

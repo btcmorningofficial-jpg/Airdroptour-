@@ -54,25 +54,50 @@ class _YouProfilePageState extends State<YouProfilePage> {
       profileCrypto.value.clear();
       for (var element in finalCryptos) {
         profileCrypto.value.add(
-          Container(
-            width: 70,
-            height: 70,
-            margin: const EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(35),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              (element["name"] ?? "?").toString(),
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
+          GestureDetector(
+            onTap: () {
+              AdminServices.showDetailDialog(
+                context,
+                photo: (element["image"] ?? "").toString(),
+                name: (element["name"] ?? "").toString(),
+                details: (element["details"] ?? "").toString(),
+                website: (element["website"] ?? "").toString().isNotEmpty
+                    ? (element["website"]).toString()
+                    : null,
+              );
+            },
+              );
+            },
+            child: Container(
+              width: 70,
+              height: 70,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(35),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              alignment: Alignment.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(35),
+                child: (element["image"] ?? "").toString().isNotEmpty
+                    ? AirdroptourImage(
+                        (element["image"]).toString(),
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      )
+                    : Text(
+                        (element["name"] ?? "?").toString(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+              ),
             ),
           ),
         );

@@ -80,10 +80,16 @@ class MyProfileData extends ChangeNotifier {
   static Future<void> addFavorite(
     String image,
     String details,
-    String name,
-  ) async {
+    String name, {
+    String? website,
+  }) async {
     List c = cripto();
-    c.add({"image": image, "details": details, "name": name});
+    c.add({
+      "image": image,
+      "details": details,
+      "name": name,
+      if (website != null && website.isNotEmpty) "website": website,
+    });
     await setProfile(cripto: c);
   }
 

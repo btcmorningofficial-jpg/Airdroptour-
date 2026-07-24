@@ -862,10 +862,11 @@ class CryptoWidget extends StatelessWidget {
                             MyProfileData.removeFavorite(name);
                           } else {
                             await MyProfileData.addFavorite(
-                              photo,
-                              details,
-                              name,
-                            );
+                        photo,
+                        details,
+                        name,
+                        website: website,
+                      );
                           }
 
                           if (!context.mounted) return;
