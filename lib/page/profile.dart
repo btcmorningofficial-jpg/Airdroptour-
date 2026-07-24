@@ -563,33 +563,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: h3("COINSAYISI-V3: " + profileCrypto.value.length.toString() + " / pool boyutu test", color: Colors.red),
-                            ),
+                            
                             ValueListenableBuilder<List<Widget>>(
               valueListenable: profileCrypto,
               builder: (context, cryptoChildren, _) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "cryptoChildren.length = " + cryptoChildren.length.toString(),
-                  style: const TextStyle(color: Colors.yellow, fontSize: 12),
-                ),
-                Container(
-                  color: Colors.blue.withOpacity(0.3),
-                  width: widthSizer(context),
-                  height: 90,
-                  child: Row(
-                    children: cryptoChildren,
-                  ),
-                ),
-              ],
+            return SizedBox(
+              width: widthSizer(context),
+              child: AutoScrollCryptoRow(
+                children: cryptoChildren,
+              ),
             );
           },
-            ),
-                            Column(children: profilePosts.value), const SizedBox(height: 100),
+        ),
+Column(children: profilePosts.value), const SizedBox(height: 100),
                           ],
                         ),
                       ),

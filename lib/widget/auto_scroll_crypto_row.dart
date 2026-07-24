@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-// Anasayfadaki kripto listesini kendiliğinden, yavaşça kaydıran satır.
-// Kullanıcı isterse manuel olarak da kaydırabilir (elini çekince
-// otomatik kaydırma kaldığı yerden devam eder).
 class AutoScrollCryptoRow extends StatefulWidget {
   final List<Widget> children;
   final double height;
@@ -31,6 +28,7 @@ class _AutoScrollCryptoRowState extends State<AutoScrollCryptoRow> {
   void _startAutoScroll() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
+      if (!mounted) return;
       if (!_controller.hasClients || _userInteracting) return;
       final maxScroll = _controller.position.maxScrollExtent;
       if (maxScroll <= 0) return;
@@ -53,20 +51,17 @@ class _AutoScrollCryptoRowState extends State<AutoScrollCryptoRow> {
   Widget build(BuildContext context) {
     return SizedBox(
       height: widget.height,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification is ScrollStartNotification &&
-              notification.dragDetails != null) {
-            _userInteracting = true;
-          } else if (notification is ScrollEndNotification) {
-            _userInteracting = false;
-          }
-          return false;
-        },
-        child: ListView(
+      width: double.infinity,
+      child: GestureDetector(
+        onPanDown: (_) => _userInteracting = true,
+        onPanCancel: () => _userInteracting = false,
+        onPanEnd: (_) => _userInteracting = false,
+        child: SingleChildScrollView(
           controller: _controller,
           scrollDirection: Axis.horizontal,
-          children: widget.children,
+          child: Row(
+            children: widget.children,
+          ),
         ),
       ),
     );
