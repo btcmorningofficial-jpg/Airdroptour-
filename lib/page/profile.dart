@@ -581,7 +581,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   color: Colors.blue.withOpacity(0.3),
                   width: widthSizer(context),
                   height: 90,
-                  child: AutoScrollCryptoRow(
+                  child: Row(
                     children: cryptoChildren,
                   ),
                 ),
