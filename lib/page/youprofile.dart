@@ -54,25 +54,86 @@ class _YouProfilePageState extends State<YouProfilePage> {
       profileCrypto.value.clear();
       for (var element in finalCryptos) {
         profileCrypto.value.add(
-          Container(
-            width: 70,
-            height: 70,
-            margin: const EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(35),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              (element["name"] ?? "?").toString(),
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
+          GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.black,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                builder: (context) {
+                  return Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            ClipOval(
+                              child: (element["image"] ?? "").toString().isNotEmpty
+                                  ? AirdroptourImage(
+                                      (element["image"]).toString(),
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Container(
+                                      width: 40,
+                                      height: 40,
+                                      color: Colors.orange,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        (element["name"] ?? "?").toString(),
+                                        style: const TextStyle(fontSize: 10, color: Colors.black),
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: h3((element["name"] ?? "").toString()),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        subP((element["details"] ?? "").toString()),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            child: Container(
+              width: 70,
+              height: 70,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(35),
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              alignment: Alignment.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(35),
+                child: (element["image"] ?? "").toString().isNotEmpty
+                    ? AirdroptourImage(
+                        (element["image"]).toString(),
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.cover,
+                      )
+                    : Text(
+                        (element["name"] ?? "?").toString(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+              ),
             ),
           ),
         );
