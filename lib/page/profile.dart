@@ -565,7 +565,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             Padding(
                               padding: const EdgeInsets.all(20),
-                              child: h3("COINSAYISI: " + profileCrypto.value.length.toString(), color: Colors.red),
+                              child: h3("COINSAYISI-V3: " + profileCrypto.value.length.toString() + " / pool boyutu test", color: Colors.red),
                             ),
                             ValueListenableBuilder<List<Widget>>(
               valueListenable: profileCrypto,
