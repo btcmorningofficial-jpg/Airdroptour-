@@ -570,19 +570,23 @@ class _ProfilePageState extends State<ProfilePage> {
                             ValueListenableBuilder<List<Widget>>(
               valueListenable: profileCrypto,
               builder: (context, cryptoChildren, _) {
-            try {
-              return SizedBox(
-                width: widthSizer(context),
-                child: AutoScrollCryptoRow(
-                  children: cryptoChildren,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "cryptoChildren.length = " + cryptoChildren.length.toString(),
+                  style: const TextStyle(color: Colors.yellow, fontSize: 12),
                 ),
-              );
-            } catch (e) {
-              return Text(
-                "CRYPTO HATASI: " + e.toString(),
-                style: const TextStyle(color: Colors.yellow, fontSize: 10),
-              );
-            }
+                Container(
+                  color: Colors.blue.withOpacity(0.3),
+                  width: widthSizer(context),
+                  height: 90,
+                  child: AutoScrollCryptoRow(
+                    children: cryptoChildren,
+                  ),
+                ),
+              ],
+            );
           },
             ),
                             Column(children: profilePosts.value), const SizedBox(height: 100),
