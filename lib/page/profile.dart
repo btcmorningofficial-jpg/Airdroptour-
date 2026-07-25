@@ -42,7 +42,22 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration.zero, () async {
+    MyProfileData.data.addListener(_onCryptoDataChanged);
+    Future.delayed(Duration.zero, _loadProfileCrypto);
+  }
+
+  Future<void> _onCryptoDataChanged() async {
+    if (!mounted) return;
+    await _loadProfileCrypto();
+  }
+
+  @override
+  void dispose() {
+    MyProfileData.data.removeListener(_onCryptoDataChanged);
+    super.dispose();
+  }
+
+  Future<void> _loadProfileCrypto() async {
       await MyProfileData.getMyProfile();
       if (!mounted) return;
       var cryptoPoolRaw = await ByBugDatabase.getAll("crypto");
@@ -185,7 +200,6 @@ class _ProfilePageState extends State<ProfilePage> {
       socialText.add(value["name"]);
     }
     Post.getProfilePosts(MyProfileData.uid());
-    });
   }
 
   @override
