@@ -139,7 +139,7 @@ class _YouProfilePageState extends State<YouProfilePage> {
               height: 70,
               margin: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: Colors.orange,
+                color: (element["image"] ?? "").toString().isNotEmpty ? Colors.transparent : Colors.orange,
                 borderRadius: BorderRadius.circular(35),
               ),
               alignment: Alignment.center,
@@ -150,7 +150,7 @@ class _YouProfilePageState extends State<YouProfilePage> {
                         (element["image"]).toString(),
                         width: 70,
                         height: 70,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                       )
                     : Text(
                         (element["name"] ?? "?").toString(),
