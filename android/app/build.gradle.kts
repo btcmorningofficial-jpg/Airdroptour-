@@ -29,7 +29,7 @@ android {
         multiDexEnabled = true
         applicationId = "com.airdroptour"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
