@@ -31,6 +31,7 @@ class _MessagePageState extends State<MessagePage> {
   @override
   void initState() {
     super.initState();
+    messages.value.clear();
     Future.delayed(Durations.medium1, () {
       scrollController.jumpTo(scrollController.position.maxScrollExtent);
     });
@@ -50,6 +51,7 @@ class _MessagePageState extends State<MessagePage> {
   void dispose() {
     super.dispose();
     MessageServices.deleteListener();
+    messages.value.clear();
   }
 
   @override

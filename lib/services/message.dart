@@ -143,6 +143,7 @@ class MessageServices extends ChangeNotifier {
     messages.value.clear();
     for (var element in message) {
       var value = element["value"];
+      if (value["chat_id"] != chatID) continue;
       messages.value.add(
         MessageBlock(tag: element["tag"], value: element["value"]),
       );
