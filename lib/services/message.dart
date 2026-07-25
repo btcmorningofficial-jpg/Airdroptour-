@@ -161,7 +161,8 @@ class MessageServices extends ChangeNotifier {
     Function(String tag, Map<String, dynamic> value) onMessage,
   ) {
     ByBugDatabase.listenAll(
-      "message",
+    "message",
+    pollKey: "message_$chatID",
       onAdd: (tag, id, value) {
         if (value["chat_id"] == chatID) {
           onMessage(tag, value);

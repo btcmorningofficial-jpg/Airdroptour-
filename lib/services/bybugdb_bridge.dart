@@ -283,33 +283,35 @@ class ByBugDatabase {
   // Gerçek zamanlı (real-time) davranışı taklit etmek için kısa aralıklarla
   // sunucuyu yokluyoruz (polling). Chat mesajları için yeterli.
   static void listenAll(
-    String bucket, {
+  String bucket, {
+  String? pollKey,
     required Function(String tag, String id, Map<String, dynamic> value)
     onAdd,
   }) {
-    _pollTimers[bucket]?.cancel();
+    final key = pollKey ?? bucket;
+  _pollTimers[key]?.cancel();
 
     Future<void> initThenPoll() async {
       // Dinlemeye başladığımız andaki en büyük id'yi baz al,
       // eski kayıtları "yeni mesaj" gibi tekrar göndermeyelim.
-      if (!_lastIds.containsKey(bucket)) {
+      if (!_lastIds.containsKey(key)) {
         final all = await getAll(bucket);
         int maxId = 0;
         for (final item in all) {
           final id = item['id'];
           if (id is int && id > maxId) maxId = id;
         }
-        _lastIds[bucket] = maxId;
+        _lastIds[key] = maxId;
       }
 
-      _pollTimers[bucket] = Timer.periodic(const Duration(seconds: 3), (
+      _pollTimers[key] = Timer.periodic(const Duration(seconds: 3), (
         timer,
       ) async {
         try {
           final headers = await ByBugAuth._authHeaders();
           final resp = await http.get(
             Uri.parse(
-              '${ByBugDB.apiBaseUrl}/db/poll.php?bucket=${Uri.encodeComponent(bucket)}&after_id=${_lastIds[bucket]}',
+              '${ByBugDB.apiBaseUrl}/db/poll.php?bucket=${Uri.encodeComponent(bucket)}&after_id=${_lastIds[key]}',
             ),
             headers: headers,
           );
@@ -317,8 +319,8 @@ class ByBugDatabase {
           if (decoded is! List) return;
           for (final item in decoded) {
             final id = item['id'];
-            if (id is int && id > (_lastIds[bucket] ?? 0)) {
-              _lastIds[bucket] = id;
+            if (id is int && id > (_lastIds[key] ?? 0)) {
+              _lastIds[key] = id;
             }
             onAdd(
               item['tag'],
