@@ -34,6 +34,7 @@ void main() async {
     );
 
     bool isSignedIn = false;
+    String? startupError;
     try {
       isSignedIn = await ByBugAuth.isSignedIn();
       if (isSignedIn) {
@@ -41,11 +42,11 @@ void main() async {
       }
     } catch (e, s) {
       debugPrint('AUTH/PROFILE HATASI: $e\n$s');
-      // Hata olsa bile uygulama çökmez, isSignedIn=false ile login ekranına düşer
+      startupError = e.toString();
       isSignedIn = false;
     }
 
-    runApp(MyApp(isSignedIn: isSignedIn));
+    runApp(MyApp(isSignedIn: isSignedIn, startupError: startupError));
   }, (error, stack) {
     debugPrint('CAUGHT ERROR: $error\n$stack');
   });
@@ -53,7 +54,8 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   final bool isSignedIn;
-  const MyApp({super.key, required this.isSignedIn});
+  final String? startupError;
+  const MyApp({super.key, required this.isSignedIn, this.startupError});
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +102,32 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: isSignedIn ? LoadingPage() : LoginPage(),
+      home: isSignedIn
+          ? LoadingPage()
+          : Builder(
+              builder: (context) {
+                if (startupError != null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Baslangic Hatasi'),
+                        content: SingleChildScrollView(
+                          child: Text(startupError!),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Kapat'),
+                          ),
+                        ],
+                      ),
+                    );
+                  });
+                }
+                return LoginPage();
+              },
+            ),
     );
   }
 }
