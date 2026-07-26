@@ -8,22 +8,46 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  ErrorWidget.builder = (details) => Material(color: Colors.white, child: Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(details.exceptionAsString(), style: const TextStyle(color: Colors.red, fontSize: 12)))));
-  await initializeDateFormatting('en', null);
-  ByBugDB.initialize(
-    // Kendi sunucumuzdaki PHP + MySQL backend adresi
-    url: "https://appairdroptour.yurtdisiisilanlari.com.tr",
-    authToken: "",
-  );
-  final bool isSignedIn = await ByBugAuth.isSignedIn();
-  if (isSignedIn) {
-    await MyProfileData.getMyProfile();
-  }
-  runZonedGuarded(() {
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Release modda da hatayı ekranda göster (beyaz/boş ekran yerine)
+    ErrorWidget.builder = (details) => Material(
+          color: Colors.white,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                details.exceptionAsString(),
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
+          ),
+        );
+
+    await initializeDateFormatting('en', null);
+
+    ByBugDB.initialize(
+      // Kendi sunucumuzdaki PHP + MySQL backend adresi
+      url: "https://appairdroptour.yurtdisiisilanlari.com.tr",
+      authToken: "",
+    );
+
+    bool isSignedIn = false;
+    try {
+      isSignedIn = await ByBugAuth.isSignedIn();
+      if (isSignedIn) {
+        await MyProfileData.getMyProfile();
+      }
+    } catch (e, s) {
+      debugPrint('AUTH/PROFILE HATASI: $e\n$s');
+      // Hata olsa bile uygulama çökmez, isSignedIn=false ile login ekranına düşer
+      isSignedIn = false;
+    }
+
     runApp(MyApp(isSignedIn: isSignedIn));
   }, (error, stack) {
-    debugPrint('CAUGHT ERROR: $error');
+    debugPrint('CAUGHT ERROR: $error\n$stack');
   });
 }
 
