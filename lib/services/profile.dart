@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 class MyProfileData extends ChangeNotifier {
   static ValueNotifier<Map<String, dynamic>> data = ValueNotifier({});
   static String bucket = "usersDatabaseByBugDatabase135153";
+  // setProfile ayni anda birden fazla kez cagrilirsa (hizli favori
+  // ekle/cikar gibi), her cagri sirayla calissin diye kullanilan kuyruk.
+  // Boylece "oku -> degistir -> yaz" adimlari arasinda baska bir yazma
+  // araya girip degisikligi silemez (race condition onlenir).
+  static Future<void> _writeQueue = Future.value();
   static Future<void> getMyProfile() async {
     String? myUID = await ByBugAuth.getUID();
     if (myUID == null) return;
@@ -82,15 +87,18 @@ class MyProfileData extends ChangeNotifier {
     String details,
     String name, {
     String? website,
-  }) async {
-    List c = cripto();
-    c.add({
-      "image": image,
-      "details": details,
-      "name": name,
-      if (website != null && website.isNotEmpty) "website": website,
-    });
-    await setProfile(cripto: c);
+  }) {
+    return setProfile(
+      criptoMutator: (current) {
+        current.add({
+          "image": image,
+          "details": details,
+          "name": name,
+          if (website != null && website.isNotEmpty) "website": website,
+        });
+        return current;
+      },
+    );
   }
 
   static bool hasFavorite(String name) {
@@ -103,16 +111,13 @@ class MyProfileData extends ChangeNotifier {
     return false;
   }
 
-  static Future<void> removeFavorite(String name) async {
-    List c = cripto();
-    dynamic el;
-    for (var element in c) {
-      if (element["name"] == name) {
-        el = element;
-      }
-    }
-    c.remove(el);
-    await setProfile(cripto: c);
+  static Future<void> removeFavorite(String name) {
+    return setProfile(
+      criptoMutator: (current) {
+        current.removeWhere((element) => element["name"] == name);
+        return current;
+      },
+    );
   }
 
   static Future<void> setProfile({
@@ -128,28 +133,41 @@ class MyProfileData extends ChangeNotifier {
     Map<String, dynamic>? social,
     List? follower,
     List? cripto,
-  }) async {
-    String? myUID = uidss ?? await ByBugAuth.getUID();
-    if (myUID == null) return;
-    if (myUID.trim().isEmpty) return;
-    var datas = await ByBugDatabase.get(bucket, myUID);
-    datas["value"] ??= <String, dynamic>{};
-    datas["value"]["data"] ??= <String, dynamic>{};
-    if (photo != null) datas["value"]["photo"] = photo;
-    if (name != null) datas["value"]["name"] = name;
-    if (bio != null) datas["value"]["data"]["bio"] = bio;
-    if (gender != null) datas["value"]["data"]["gender"] = gender;
-    if (verify != null) datas["value"]["data"]["verify"] = verify;
-    if (status != null) datas["value"]["data"]["status"] = status;
-    if (isAdmin != null) datas["value"]["data"]["isAdmin"] = isAdmin;
-    if (profileCompleted != null) {
-      datas["value"]["data"]["profileCompleted"] = profileCompleted;
-    }
-    if (social != null) datas["value"]["data"]["social"] = social;
-    if (cripto != null) datas["value"]["data"]["cripto"] = cripto;
-    await ByBugDatabase.update(bucket, myUID, datas["value"]);
-    data.value = datas["value"];
-    data.notifyListeners();
+    // Favori ekleme/cikarma gibi islemlerde, mevcut listeyi degil,
+    // sunucudan YENI okunan listeyi baz alip degistirmek icin kullanilir.
+    // Boylece art arda hizli yapilan degisiklikler birbirini ezmez.
+    List Function(List current)? criptoMutator,
+  }) {
+    final future = _writeQueue.then((_) async {
+      String? myUID = uidss ?? await ByBugAuth.getUID();
+      if (myUID == null) return;
+      if (myUID.trim().isEmpty) return;
+      var datas = await ByBugDatabase.get(bucket, myUID);
+      datas["value"] ??= <String, dynamic>{};
+      datas["value"]["data"] ??= <String, dynamic>{};
+      if (photo != null) datas["value"]["photo"] = photo;
+      if (name != null) datas["value"]["name"] = name;
+      if (bio != null) datas["value"]["data"]["bio"] = bio;
+      if (gender != null) datas["value"]["data"]["gender"] = gender;
+      if (verify != null) datas["value"]["data"]["verify"] = verify;
+      if (status != null) datas["value"]["data"]["status"] = status;
+      if (isAdmin != null) datas["value"]["data"]["isAdmin"] = isAdmin;
+      if (profileCompleted != null) {
+        datas["value"]["data"]["profileCompleted"] = profileCompleted;
+      }
+      if (social != null) datas["value"]["data"]["social"] = social;
+      if (criptoMutator != null) {
+        List current = List.from(datas["value"]["data"]["cripto"] ?? []);
+        datas["value"]["data"]["cripto"] = criptoMutator(current);
+      } else if (cripto != null) {
+        datas["value"]["data"]["cripto"] = cripto;
+      }
+      await ByBugDatabase.update(bucket, myUID, datas["value"]);
+      data.value = datas["value"];
+      data.notifyListeners();
+    });
+    _writeQueue = future.catchError((_) {});
+    return future;
   }
 }
 

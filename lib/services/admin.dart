@@ -859,7 +859,7 @@ class CryptoWidget extends StatelessWidget {
                       GestureDetector(
                         onTap: () async {
                           if (MyProfileData.hasFavorite(name)) {
-                            MyProfileData.removeFavorite(name);
+                            await MyProfileData.removeFavorite(name);
                           } else {
                             await MyProfileData.addFavorite(
                         photo,
