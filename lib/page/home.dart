@@ -150,33 +150,39 @@ class _HomePageState extends State<HomePage> {
                   String bucket = "usersDatabaseByBugDatabase135153";
                   pageDatas.value.clear();
                   var usrs = await ByBugDatabase.getAll(bucket);
-                  for (var element in usrs) {
-                    if (element["value"]["uid"] != MyProfileData.uid()) {
-                      List<Widget> ccryp = [];
-                      for (var cE
-                          in (element["value"]["data"]["cripto"] ?? [])) {
-                        if (AdminServices.cryptosNames.contains(cE["image"])) {
-                          ccryp.add(
-                            MatchCryptoChip(
-                              photo: cE["image"],
-                              name: cE["name"],
-                              details: cE["details"] ?? "",
-                            ),
-                          );
-                        }
-                      }
-                      pageDatas.value.add(
-                        MatchPage(
-                          matchCrypto: ccryp,
-                          name: element["value"]["name"],
-                          bio: element["value"]["data"]["bio"],
-                          uid: element["value"]["uid"],
-                          photo: element["value"]["photo"],
-            verify: element["value"]["data"]["verify"] ?? false,
-                        ),
-                      );
-                    }
-                  }
+        for (var element in usrs) {
+          try {
+            final value = element["value"];
+            if (value == null) continue;
+            final data = value["data"] as Map<String, dynamic>? ?? {};
+            if (value["uid"] != MyProfileData.uid()) {
+              List<Widget> ccryp = [];
+              for (var cE in (data["cripto"] ?? [])) {
+                if (AdminServices.cryptosNames.contains(cE["image"])) {
+                  ccryp.add(
+                    MatchCryptoChip(
+                      photo: cE["image"],
+                      name: cE["name"],
+                      details: cE["details"] ?? "",
+                    ),
+                  );
+                }
+              }
+              pageDatas.value.add(
+                MatchPage(
+                  matchCrypto: ccryp,
+                  name: value["name"] ?? "",
+                  bio: data["bio"] ?? "",
+                  uid: value["uid"] ?? "",
+                  photo: value["photo"] ?? "",
+                  verify: data["verify"] ?? false,
+                ),
+              );
+            }
+          } catch (e) {
+            continue;
+          }
+        }
                   pageDatas.value.shuffle();
                   pageDatas.notifyListeners();
                   if (!context.mounted) return;
