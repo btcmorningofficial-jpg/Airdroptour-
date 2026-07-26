@@ -115,11 +115,14 @@ class MessageServices extends ChangeNotifier {
   }
 
   static Future<void> removeChatMessages(String chatID) async {
-    var allMessages = await ByBugDatabase.getAll("message");
+    var allMessages = await ByBugDatabase.getFiltered(
+      "message",
+      "chat_id",
+      chatID,
+      limit: 500,
+    );
     for (var element in allMessages) {
-      if (element["value"]["chat_id"] == chatID) {
-        await ByBugDatabase.remove("message", element["tag"]);
-      }
+      await ByBugDatabase.remove("message", element["tag"]);
     }
     messages.value.clear();
     messages.notifyListeners();
@@ -139,11 +142,13 @@ class MessageServices extends ChangeNotifier {
     chatInPhoto.value = userData["value"]["photo"];
     chatInChatID.value = chatID;
     chatInCreateAT.value = DateTime.parse(chats["value"]["create_at"]);
-    var message = await ByBugDatabase.getAll("message");
+    var message = await ByBugDatabase.getFiltered(
+      "message",
+      "chat_id",
+      chatID,
+    );
     messages.value.clear();
     for (var element in message) {
-      var value = element["value"];
-      if (value["chat_id"] != chatID) continue;
       messages.value.add(
         MessageBlock(tag: element["tag"], value: element["value"]),
       );

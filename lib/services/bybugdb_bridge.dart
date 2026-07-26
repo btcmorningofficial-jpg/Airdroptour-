@@ -232,6 +232,24 @@ class ByBugDatabase {
     return {'tag': j['tag'], 'value': j['value'] ?? {}};
   }
 
+  static Future<List<dynamic>> getFiltered(
+    String bucket,
+    String field,
+    String value, {
+    int limit = 200,
+  }) async {
+    final headers = await ByBugAuth._authHeaders();
+    final resp = await http.get(
+      Uri.parse(
+        '${ByBugDB.apiBaseUrl}/db/get_filtered.php?bucket=${Uri.encodeComponent(bucket)}&field=$field&value=${Uri.encodeComponent(value)}&limit=$limit',
+      ),
+      headers: headers,
+    );
+    final decoded = jsonDecode(resp.body);
+    if (decoded is! List) return [];
+    return decoded;
+  }
+
   static Future<List<dynamic>> getAll(String bucket) async {
     final headers = await ByBugAuth._authHeaders();
     final resp = await http.get(
