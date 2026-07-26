@@ -590,52 +590,46 @@ class ByBugChannel {
     }
   }
 
-  static StreamSubscription<String>? _sseSub;
+  static Timer? _pollTimer;
+  static String _lastPolledId = '0';
 
+  /// Eskiden SSE (channel_stream.php, surekli acik baglanti) kullaniyordu.
+  /// Sunucu kaynak kullanimini azaltmak icin channel_feed.php ile
+  /// 3 saniyede bir kisa polling yapiyoruz - ayni ByBugDatabase.listenAll mantigi.
   static Future<void> streamChannel({
     required String channelId,
     required Function(Map<String, dynamic> post) onPost,
     String afterId = '0',
   }) async {
-    await _sseSub?.cancel();
-    final token = await ByBugAuth._getToken();
-    final client = http.Client();
+    _pollTimer?.cancel();
+    _lastPolledId = afterId;
 
-    Future<void> connect(String lastId) async {
-      final uri = Uri.parse(
-        '${ByBugDB.apiBaseUrl}/db/channel_stream.php?channel_id=$channelId&after_id=$lastId&token=${token ?? ''}',
-      );
-      final request = http.Request('GET', uri);
-      final response = await client.send(request);
-
-      String currentLastId = lastId;
-      _sseSub = response.stream
-          .transform(utf8.decoder)
-          .transform(const LineSplitter())
-          .listen((line) {
-        if (line.startsWith('data: ')) {
-          final jsonStr = line.substring(6);
-          try {
-            final data = jsonDecode(jsonStr);
-            if (data is Map && data.containsKey('id')) {
-              currentLastId = data['id'].toString();
-              onPost(Map<String, dynamic>.from(data));
-            }
-          } catch (_) {}
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      try {
+        final headers = await ByBugAuth._authHeaders();
+        final resp = await http.get(
+          Uri.parse(
+            '${ByBugDB.apiBaseUrl}/db/channel_feed.php?channel_id=$channelId&after_id=$_lastPolledId',
+          ),
+          headers: headers,
+        ).timeout(const Duration(seconds: 10));
+        final decoded = jsonDecode(resp.body);
+        if (decoded is! List) return;
+        for (final item in decoded) {
+          if (item is Map && item.containsKey('id')) {
+            _lastPolledId = item['id'].toString();
+            onPost(Map<String, dynamic>.from(item));
+          }
         }
-      }, onDone: () {
-        connect(currentLastId);
-      }, onError: (_) {
-        Future.delayed(const Duration(seconds: 3), () => connect(currentLastId));
-      });
-    }
-
-    await connect(afterId);
+      } catch (_) {
+        // gecici ag hatasi, bir sonraki turda tekrar denenir
+      }
+    });
   }
 
   static void stopStream() {
-    _sseSub?.cancel();
-    _sseSub = null;
+    _pollTimer?.cancel();
+    _pollTimer = null;
   }
 }
 
