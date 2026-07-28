@@ -509,6 +509,27 @@ class ByBugChannel {
     }
   }
 
+  static Future<List<dynamic>> listChannels() async {
+    try {
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .get(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_list.php'),
+            headers: headers,
+          )
+          .timeout(_kDefaultTimeout);
+      final decoded = jsonDecode(resp.body);
+      if (decoded is! List) {
+        return [0, 'Sunucudan gecersiz yanit alindi'];
+      }
+      return [1, decoded];
+    } on TimeoutException {
+      return [0, 'Sunucu yanit vermedi (zaman asimi)'];
+    } catch (e) {
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
   static Future<List<dynamic>> updateAvatar({
     required String channelId,
     required String filePath,
