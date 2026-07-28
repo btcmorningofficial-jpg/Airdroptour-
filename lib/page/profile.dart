@@ -1,9 +1,9 @@
-
 import 'package:airdrop/widget/snack.dart';
 import 'package:airdrop/page/add_rain.dart';
 import 'package:airdrop/page/admin/admin.dart';
 import 'package:airdrop/page/contact.dart';
 import 'package:airdrop/page/edit.dart';
+import 'package:airdrop/page/home.dart';
 import 'package:airdrop/page/login.dart';
 import 'package:airdrop/services/admin.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -58,12 +58,12 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  // 🔥 KRİTİK: _loadProfileCrypto'ya try-catch eklendi
+  // 🔥 ANA FONKSİYON: Crypto'ları yükle ve göster
   Future<void> _loadProfileCrypto() async {
     try {
       await MyProfileData.getMyProfile();
       if (!mounted) return;
-      
+
       var cryptoPoolRaw = await ByBugDatabase.getAll("crypto");
       List<Map<String, dynamic>> cryptoPool = [];
       for (var element in cryptoPoolRaw) {
@@ -74,100 +74,32 @@ class _ProfilePageState extends State<ProfilePage> {
         if ((val["image"] ?? "").toString().isEmpty) continue;
         cryptoPool.add(val);
       }
-      
+
       var finalCryptos = fillToThreeCryptos(
         MyProfileData.cripto(),
         cryptoPool,
       );
-      
+
       profileCrypto.value.clear();
+
       for (var element in finalCryptos) {
         profileCrypto.value.add(
           GestureDetector(
             onTap: () {
-              showModalBottomSheet(
-                context: context,
-                backgroundColor: Colors.black,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                builder: (context) {
-                  return Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            ClipOval(
-                              child: (element["image"] ?? "").toString().isNotEmpty
-                                  ? AirdroptourImage(
-                                      (element["image"]).toString(),
-                                      width: 40,
-                                      height: 40,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Container(
-                                      width: 40,
-                                      height: 40,
-                                      color: Colors.orange,
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        (element["name"] ?? "?").toString(),
-                                        style: const TextStyle(fontSize: 10, color: Colors.black),
-                                      ),
-                                    ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: h3((element["name"] ?? "").toString()),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        subP((element["details"] ?? "").toString()),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: CryptoWidget.exchangeLinks.entries.map((entry) {
-                            return GestureDetector(
-                              onTap: () async {
-                                final uri = Uri.tryParse(entry.value);
-                                if (uri != null) {
-                                  await launchUrl(
-                                    uri,
-                                    mode: LaunchMode.externalApplication,
-                                  );
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: defaultColor,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: h5(entry.key),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
+              _showCryptoDetail(context, element);
+            },
+            // 🔥 BURASI ÇOK ÖNEMLİ: Uzun basınca favoriden çıkarma
+            onLongPress: () {
+              _showRemoveFavoriteDialog(context, element);
             },
             child: Container(
               width: 70,
               height: 70,
               margin: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: (element["image"] ?? "").toString().isNotEmpty ? Colors.transparent : Colors.orange,
+                color: (element["image"] ?? "").toString().isNotEmpty
+                    ? Colors.transparent
+                    : Colors.orange,
                 borderRadius: BorderRadius.circular(35),
               ),
               alignment: Alignment.center,
@@ -196,9 +128,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         );
       }
+
       profileCrypto.notifyListeners();
       debugPrint("DEBUG profil cripto sayisi: ${MyProfileData.cripto().length}");
-      
+
       var socialData = MyProfileData.social();
       social.clear();
       for (var element in socialData.keys) {
@@ -206,20 +139,173 @@ class _ProfilePageState extends State<ProfilePage> {
         social.add([value["name"], value["url"]]);
         socialText.add(value["name"]);
       }
+
       Post.getProfilePosts(MyProfileData.uid());
     } catch (e) {
       debugPrint("❌ _loadProfileCrypto hatası: $e");
-      // Hata olsa bile uygulama çökmesin
+      profileCrypto.value.clear();
+      profileCrypto.notifyListeners();
+    }
+  }
+
+  // 🔥 YENİ: Crypto detay göster
+  void _showCryptoDetail(BuildContext context, Map<String, dynamic> element) {
+    try {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.black,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (context) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ClipOval(
+                      child: (element["image"] ?? "").toString().isNotEmpty
+                          ? AirdroptourImage(
+                              (element["image"]).toString(),
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(
+                              width: 40,
+                              height: 40,
+                              color: Colors.orange,
+                              alignment: Alignment.center,
+                              child: Text(
+                                (element["name"] ?? "?").toString(),
+                                style: const TextStyle(
+                                    fontSize: 10, color: Colors.black),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: h3((element["name"] ?? "").toString()),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                subP((element["details"] ?? "").toString()),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: CryptoWidget.exchangeLinks.entries.map((entry) {
+                    return GestureDetector(
+                      onTap: () async {
+                        final uri = Uri.tryParse(entry.value);
+                        if (uri != null) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: defaultColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: h5(entry.key),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint("⚠️ Crypto detay gösterilemedi: $e");
+    }
+  }
+
+  // 🔥 YENİ: Favori coin silme dialog'u
+  void _showRemoveFavoriteDialog(
+      BuildContext context, Map<String, dynamic> coin) {
+    String coinName = coin["name"]?.toString() ?? "Bu coin";
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: navColor,
+        title: Text("Favoriden Çıkar", style: TextStyle(color: textColor)),
+        content: Text(
+          "$coinName favorilerinden çıkarmak istediğinize emin misiniz?",
+          style: TextStyle(color: textColor.withOpacity(0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("İptal", style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _removeFavoriteCoin(coinName);
+            },
+            child: Text(
+              "Çıkar",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔥 YENİ: Favori coin silme işlemi
+  Future<void> _removeFavoriteCoin(String coinName) async {
+    try {
+      List currentFavorites = MyProfileData.cripto();
+      if (currentFavorites == null) currentFavorites = [];
+
+      currentFavorites.removeWhere((element) {
+        if (element is Map) {
+          return element["name"] == coinName;
+        }
+        return false;
+      });
+
+      await MyProfileData.setProfile(
+        cripto: currentFavorites,
+      );
+
+      await _loadProfileCrypto();
+
+      if (mounted) {
+        getSuccessSnack(context, "$coinName favorilerden çıkarıldı");
+      }
+    } catch (e) {
+      debugPrint("❌ Favori coin silme hatası: $e");
+      if (mounted) {
+        getErrorSnack(context, "Coin çıkarılamadı: $e");
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 KRİTİK: WillPopScope eklendi - Geri tuşu logout olmayı engeller
+    // 🔥 BURASI ÇOK ÖNEMLİ: Geri tuşu HOME'a yönlendir (Login'e değil!)
     return WillPopScope(
       onWillPop: () async {
-        // Geri tuşuna basınca ana sayfaya git (logout olma!)
-        Navigator.pushReplacementNamed(context, '/');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
         return false;
       },
       child: SizerResponsive(
@@ -242,6 +328,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         Expanded(
                           child: Column(
                             children: [
+                              // 🟢 PROFİL BAŞLIĞI
                               Padding(
                                 padding: const EdgeInsets.all(10),
                                 child: Row(
@@ -251,7 +338,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                       height: 25,
                                       decoration: BoxDecoration(
                                         color: defaultColor,
-                                        borderRadius: BorderRadius.circular(1020),
+                                        borderRadius:
+                                            BorderRadius.circular(1020),
                                       ),
                                     ),
                                     SizedBox(width: 4),
@@ -259,6 +347,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ],
                                 ),
                               ),
+
+                              // 🟢 PROFİL RESİM + İSİM + POST SAYISI
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
@@ -288,7 +378,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                           Row(
                                             children: [
                                               Visibility(
-                                                visible: MyProfileData.premium(),
+                                                visible:
+                                                    MyProfileData.premium(),
                                                 child: Row(
                                                   children: [
                                                     Icon(
@@ -303,7 +394,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                               Expanded(
                                                 child: h3(
                                                   MyProfileData.name(),
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
@@ -320,7 +412,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                                   MyProfileData.isAdmin()
                                                       ? "Admin/Developer Account"
                                                       : "User Account",
-                                                  overflow: TextOverflow.ellipsis,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
@@ -344,6 +437,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ],
                                 ),
                               ),
+
+                              // 🟢 BİO + SOSYAL MEDYA
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 10,
@@ -436,165 +531,46 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ],
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  push(context, EditPage());
-                                },
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 10),
-                                  padding: EdgeInsets.all(10),
-                                  width: widthSizer(context),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [bg, navColor],
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      p("Edit Profile"),
-                                      Spacer(),
-                                      Icon(
-                                        Icons.settings_outlined,
-                                        color: textColor,
-                                        size: 15,
-                                      ),
-                                    ],
-                                  ),
-                                ),
+
+                              // 🟢 BUTONLAR
+                              _buildMenuItem(
+                                icon: Icons.settings_outlined,
+                                title: "Edit Profile",
+                                onTap: () => push(context, EditPage()),
                               ),
-                              SizedBox(height: 4),
-                              GestureDetector(
-                                onTap: () {
-                                  push(context, Contact());
-                                },
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 10),
-                                  padding: EdgeInsets.all(10),
-                                  width: widthSizer(context),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [bg, navColor],
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      p("Contact Us"),
-                                      Spacer(),
-                                      Icon(
-                                        Icons.radar_outlined,
-                                        color: textColor,
-                                        size: 15,
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              _buildMenuItem(
+                                icon: Icons.radar_outlined,
+                                title: "Contact Us",
+                                onTap: () => push(context, Contact()),
                               ),
-                              Visibility(
-                                visible: MyProfileData.isAdmin(),
-                                child: Column(
-                                  children: [
-                                    SizedBox(height: 4),
-                                    GestureDetector(
-                                      onTap: () {
-                                        push(context, AdminPanel());
-                                      },
-                                      child: Container(
-                                        margin: EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                        ),
-                                        padding: EdgeInsets.all(10),
-                                        width: widthSizer(context),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [bg, navColor],
-                                          ),
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            p("Administration Panel"),
-                                            Spacer(),
-                                            Icon(
-                                              Icons.admin_panel_settings,
-                                              color: textColor,
-                                              size: 15,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                              if (MyProfileData.isAdmin())
+                                _buildMenuItem(
+                                  icon: Icons.admin_panel_settings,
+                                  title: "Administration Panel",
+                                  onTap: () => push(context, AdminPanel()),
                                 ),
+                              _buildMenuItem(
+                                icon: Icons.add_box_outlined,
+                                title: "Create New Post",
+                                onTap: () => addPost(context),
                               ),
-                              SizedBox(height: 4),
-                              GestureDetector(
-                                onTap: () {
-                                  addPost(context);
-                                },
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 10),
-                                  padding: EdgeInsets.all(10),
-                                  width: widthSizer(context),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [bg, navColor],
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      p("Create New Post"),
-                                      Spacer(),
-                                      Icon(
-                                        Icons.add_box_outlined,
-                                        color: textColor,
-                                        size: 15,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              GestureDetector(
+                              _buildMenuItem(
+                                icon: Icons.logout,
+                                title: "Sign Out",
+                                color: Colors.red,
                                 onTap: () async {
                                   await ByBugAuth.logout();
                                   if (!context.mounted) return;
                                   push(context, LoginPage());
                                 },
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 10),
-                                  padding: EdgeInsets.all(10),
-                                  width: widthSizer(context),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [bg, Colors.red],
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      p("Sign Out"),
-                                      Spacer(),
-                                      Icon(
-                                        Icons.logout,
-                                        color: textColor,
-                                        size: 15,
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
-                              SizedBox(height: 4),
-                              GestureDetector(
+                              _buildMenuItem(
+                                icon: Icons.delete_forever,
+                                title: "Delete My Account",
+                                color: Colors.red,
+                                isDelete: true,
                                 onTap: () async {
+                                  // Delete Account işlemi
                                   final confirm1 = await showDialog<bool>(
                                     context: context,
                                     builder: (ctx) => AlertDialog(
@@ -655,37 +631,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                     }
                                   }
                                 },
-                                child: Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 10),
-                                  padding: EdgeInsets.all(10),
-                                  width: widthSizer(context),
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    border: Border.all(
-                                      color: Colors.red.withOpacity(0.5),
-                                    ),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "Delete My Account",
-                                        style: TextStyle(
-                                          color: Colors.red.withOpacity(0.8),
-                                        ),
-                                      ),
-                                      Spacer(),
-                                      Icon(
-                                        Icons.delete_forever,
-                                        color: Colors.red.withOpacity(0.8),
-                                        size: 15,
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
-                              
+
+                              // 🟢 CRYPTO ROW
                               ValueListenableBuilder<List<Widget>>(
                                 valueListenable: profileCrypto,
                                 builder: (context, cryptoChildren, _) {
@@ -697,7 +645,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                   );
                                 },
                               ),
-                              Column(children: profilePosts.value), 
+
+                              // 🟢 POSTLAR
+                              Column(children: profilePosts.value),
                               const SizedBox(height: 100),
                             ],
                           ),
@@ -711,6 +661,57 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
+    );
+  }
+
+  // 🔥 YARDIMCI WIDGET: Menü öğesi
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color color = Colors.white,
+    bool isDelete = false,
+  }) {
+    return Column(
+      children: [
+        SizedBox(height: 4),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 10),
+            padding: EdgeInsets.all(10),
+            width: widthSizer(context),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDelete
+                    ? [bg, Colors.red.withOpacity(0.3)]
+                    : [bg, navColor],
+              ),
+              borderRadius: BorderRadius.circular(10),
+              border: isDelete
+                  ? Border.all(color: Colors.red.withOpacity(0.5))
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isDelete ? Colors.red.withOpacity(0.8) : color,
+                  ),
+                ),
+                Spacer(),
+                Icon(
+                  icon,
+                  color: isDelete ? Colors.red.withOpacity(0.8) : color,
+                  size: 15,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
