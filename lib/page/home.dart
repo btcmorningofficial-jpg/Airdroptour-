@@ -32,14 +32,38 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   ValueNotifier<List<Widget>> pageDatas = ValueNotifier([]);
+
+  static bool _isLoading = false;
+  static DateTime? _lastLoadedAt;
+  static const Duration _minReloadGap = Duration(seconds: 20);
+
   @override
   void initState() {
     super.initState();
-    MyProfileData.getMyProfile();
-    Post.getPosts();
-    AdminServices.getHomeCryptos(context);
-    AdminServices.getAds(context);
-    MessageServices.getDM();
+    _loadHomeData();
+  }
+
+  Future<void> _loadHomeData({bool force = false}) async {
+    if (_isLoading) return;
+    if (!force &&
+        _lastLoadedAt != null &&
+        DateTime.now().difference(_lastLoadedAt!) < _minReloadGap) {
+      return;
+    }
+    _isLoading = true;
+    try {
+      await Future.wait([
+        MyProfileData.getMyProfile(),
+        Post.getPosts(),
+        AdminServices.getHomeCryptos(context),
+        AdminServices.getAds(context),
+        MessageServices.getDM(),
+      ]);
+      _lastLoadedAt = DateTime.now();
+    } catch (_) {
+    } finally {
+      _isLoading = false;
+    }
   }
 
   @override
@@ -91,13 +115,13 @@ class _HomePageState extends State<HomePage> {
                                 },
                                 child: Icon(Icons.whatshot, size: 26),
                               ),
-                  SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: () {
-                      push(context, DMBox());
-                    },
-                    child: Icon(Icons.messenger_outline, size: 26),
-                  ),
+                              SizedBox(width: 10),
+                              GestureDetector(
+                                onTap: () {
+                                  push(context, DMBox());
+                                },
+                                child: Icon(Icons.messenger_outline, size: 26),
+                              ),
                               SizedBox(width: 10),
                             ],
                           ),
@@ -150,39 +174,39 @@ class _HomePageState extends State<HomePage> {
                   String bucket = "usersDatabaseByBugDatabase135153";
                   pageDatas.value.clear();
                   var usrs = await ByBugDatabase.getAll(bucket);
-        for (var element in usrs) {
-          try {
-            final value = element["value"];
-            if (value == null) continue;
-            final data = value["data"] as Map<String, dynamic>? ?? {};
-            if (value["uid"] != MyProfileData.uid()) {
-              List<Widget> ccryp = [];
-              for (var cE in (data["cripto"] ?? [])) {
-                if (AdminServices.cryptosNames.contains(cE["image"])) {
-                  ccryp.add(
-                    MatchCryptoChip(
-                      photo: cE["image"],
-                      name: cE["name"],
-                      details: cE["details"] ?? "",
-                    ),
-                  );
-                }
-              }
-              pageDatas.value.add(
-                MatchPage(
-                  matchCrypto: ccryp,
-                  name: value["name"] ?? "",
-                  bio: data["bio"] ?? "",
-                  uid: value["uid"] ?? "",
-                  photo: value["photo"] ?? "",
-                  verify: data["verify"] ?? false,
-                ),
-              );
-            }
-          } catch (e) {
-            continue;
-          }
-        }
+                  for (var element in usrs) {
+                    try {
+                      final value = element["value"];
+                      if (value == null) continue;
+                      final data = value["data"] as Map<String, dynamic>? ?? {};
+                      if (value["uid"] != MyProfileData.uid()) {
+                        List<Widget> ccryp = [];
+                        for (var cE in (data["cripto"] ?? [])) {
+                          if (AdminServices.cryptosNames.contains(cE["image"])) {
+                            ccryp.add(
+                              MatchCryptoChip(
+                                photo: cE["image"],
+                                name: cE["name"],
+                                details: cE["details"] ?? "",
+                              ),
+                            );
+                          }
+                        }
+                        pageDatas.value.add(
+                          MatchPage(
+                            matchCrypto: ccryp,
+                            name: value["name"] ?? "",
+                            bio: data["bio"] ?? "",
+                            uid: value["uid"] ?? "",
+                            photo: value["photo"] ?? "",
+                            verify: data["verify"] ?? false,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      continue;
+                    }
+                  }
                   pageDatas.value.shuffle();
                   pageDatas.notifyListeners();
                   if (!context.mounted) return;
@@ -278,6 +302,3 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-    );
-  }
-}
