@@ -27,6 +27,7 @@ void main() async {
 
     await initializeDateFormatting('en', null);
 
+    // 🔥 KRİTİK: API URL'sini düzelt!
     ByBugDB.initialize(
       // Kendi sunucumuzdaki PHP + MySQL backend adresi
       url: "https://appairdroptour.yurtdisiisilanlari.com.tr",
@@ -38,7 +39,14 @@ void main() async {
     try {
       isSignedIn = await ByBugAuth.isSignedIn();
       if (isSignedIn) {
-        await MyProfileData.getMyProfile();
+        // 🔥 PROFİL YÜKLENEMEZSE ÇÖKMESİN!
+        try {
+          await MyProfileData.getMyProfile();
+        } catch (e) {
+          debugPrint('PROFİL YÜKLEME HATASI: $e');
+          // Profil yüklenemezse bile devam et
+          isSignedIn = true; // Oturum açık kalsın
+        }
       }
     } catch (e, s) {
       debugPrint('AUTH/PROFILE HATASI (ilk deneme): $e\n$s');
@@ -46,7 +54,12 @@ void main() async {
       try {
         isSignedIn = await ByBugAuth.isSignedIn();
         if (isSignedIn) {
-          await MyProfileData.getMyProfile();
+          try {
+            await MyProfileData.getMyProfile();
+          } catch (e) {
+            debugPrint('PROFİL YÜKLEME HATASI (retry): $e');
+            isSignedIn = true; // Oturum açık kalsın
+          }
         }
       } catch (e2, s2) {
         debugPrint('AUTH/PROFILE HATASI (retry): $e2\n$s2');
