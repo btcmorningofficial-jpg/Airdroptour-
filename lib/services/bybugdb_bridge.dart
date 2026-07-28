@@ -31,6 +31,12 @@ class ByBugDB {
   static void initialize({required String url, String authToken = ''}) {
     apiBaseUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
     token = authToken;
+    debugPrint('✅ ByBugDB başlatıldı: $apiBaseUrl');
+  }
+  
+  // 🔥 YENİ: API başlatılmış mı kontrol et
+  static bool isInitialized() {
+    return apiBaseUrl.isNotEmpty;
   }
 }
 
@@ -39,14 +45,24 @@ class ByBugAuth {
   static const _uidKey = 'bb_auth_uid';
 
   static Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_tokenKey);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_tokenKey);
+    } catch (e) {
+      debugPrint('_getToken hatası: $e');
+      return null;
+    }
   }
 
   static Future<void> _saveSession(String token, String uid) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
-    await prefs.setString(_uidKey, uid);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_tokenKey, token);
+      await prefs.setString(_uidKey, uid);
+      debugPrint('✅ Session kaydedildi: uid=$uid');
+    } catch (e) {
+      debugPrint('_saveSession hatası: $e');
+    }
   }
 
   static Future<Map<String, String>> _authHeaders() async {
@@ -65,6 +81,9 @@ class ByBugAuth {
     Map<String, dynamic>? data,
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final resp = await http
           .post(
             Uri.parse('${ByBugDB.apiBaseUrl}/auth/register.php'),
@@ -87,12 +106,16 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('register hatası: $e');
       return [0, 'Could not connect to server (register)'];
     }
   }
 
   static Future<List<dynamic>> login(String email, String password) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final resp = await http
           .post(
             Uri.parse('${ByBugDB.apiBaseUrl}/auth/login.php'),
@@ -110,12 +133,16 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('login hatası: $e');
       return [0, 'Could not connect to server (login)'];
     }
   }
 
   static Future<List<dynamic>> loginWithGoogle(String idToken) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final resp = await http
           .post(
             Uri.parse('${ByBugDB.apiBaseUrl}/auth/google_login.php'),
@@ -133,12 +160,16 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('loginWithGoogle hatası: $e');
       return [0, 'Could not connect to server (google_login)'];
     }
   }
 
   static Future<List<dynamic>> deleteUser(String targetUid) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await _authHeaders();
       final resp = await http
           .post(
@@ -154,12 +185,16 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('deleteUser hatası: $e');
       return [0, 'Could not connect to server (delete_user)'];
     }
   }
 
   static Future<List<dynamic>> deleteSelf() async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await _authHeaders();
       final resp = await http
           .post(
@@ -174,12 +209,16 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('deleteSelf hatası: $e');
       return [0, 'Could not connect to server (delete_self)'];
     }
   }
 
   static Future<List<dynamic>> forgotPassword(String email) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final resp = await http
           .post(
             Uri.parse('${ByBugDB.apiBaseUrl}/auth/forgot_password.php'),
@@ -194,6 +233,7 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('forgotPassword hatası: $e');
       return [0, 'Could not connect to server (forgot_password)'];
     }
   }
@@ -204,6 +244,9 @@ class ByBugAuth {
     String newPassword,
   ) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final resp = await http
           .post(
             Uri.parse('${ByBugDB.apiBaseUrl}/auth/reset_password.php'),
@@ -222,26 +265,42 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('resetPassword hatası: $e');
       return [0, 'Could not connect to server (reset_password)'];
     }
   }
 
   static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_uidKey);
-    ByBugDatabase.stopAllListeners();
-    ByBugChannel.stopStream();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_tokenKey);
+      await prefs.remove(_uidKey);
+      ByBugDatabase.stopAllListeners();
+      ByBugChannel.stopStream();
+      debugPrint('✅ Çıkış yapıldı');
+    } catch (e) {
+      debugPrint('logout hatası: $e');
+    }
   }
 
   static Future<bool> isSignedIn() async {
-    final t = await _getToken();
-    return t != null && t.isNotEmpty;
+    try {
+      final t = await _getToken();
+      return t != null && t.isNotEmpty;
+    } catch (e) {
+      debugPrint('isSignedIn hatası: $e');
+      return false;
+    }
   }
 
   static Future<String?> getUID() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_uidKey);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_uidKey);
+    } catch (e) {
+      debugPrint('getUID hatası: $e');
+      return null;
+    }
   }
 }
 
@@ -252,6 +311,10 @@ class ByBugDatabase {
 
   static Future<Map<String, dynamic>> get(String bucket, String tag) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugDatabase.get: API başlatılmamış!');
+        return {'tag': tag, 'value': <String, dynamic>{}};
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .get(
@@ -266,7 +329,8 @@ class ByBugDatabase {
         return {'tag': tag, 'value': <String, dynamic>{}};
       }
       return {'tag': j['tag'], 'value': j['value'] ?? {}};
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ByBugDatabase.get hatası: $e');
       return {'tag': tag, 'value': <String, dynamic>{}};
     }
   }
@@ -278,6 +342,10 @@ class ByBugDatabase {
     int limit = 200,
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugDatabase.getFiltered: API başlatılmamış!');
+        return [];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .get(
@@ -290,13 +358,18 @@ class ByBugDatabase {
       final decoded = _safeDecode(resp);
       if (decoded is! List) return [];
       return decoded;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ByBugDatabase.getFiltered hatası: $e');
       return [];
     }
   }
 
   static Future<List<dynamic>> getAll(String bucket) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugDatabase.getAll: API başlatılmamış!');
+        return [];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .get(
@@ -309,7 +382,8 @@ class ByBugDatabase {
       final decoded = _safeDecode(resp);
       if (decoded is! List) return [];
       return decoded;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ByBugDatabase.getAll hatası: $e');
       return [];
     }
   }
@@ -320,6 +394,10 @@ class ByBugDatabase {
     Map<String, dynamic> value,
   ) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugDatabase.add: API başlatılmamış!');
+        return;
+      }
       final headers = await ByBugAuth._authHeaders();
       await http
           .post(
@@ -328,7 +406,9 @@ class ByBugDatabase {
             body: jsonEncode({'bucket': bucket, 'tag': tag, 'value': value}),
           )
           .timeout(_kDefaultTimeout);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ByBugDatabase.add hatası: $e');
+    }
   }
 
   static Future<void> update(
@@ -337,6 +417,10 @@ class ByBugDatabase {
     Map<String, dynamic> value,
   ) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugDatabase.update: API başlatılmamış!');
+        return;
+      }
       final headers = await ByBugAuth._authHeaders();
       await http
           .post(
@@ -345,11 +429,17 @@ class ByBugDatabase {
             body: jsonEncode({'bucket': bucket, 'tag': tag, 'value': value}),
           )
           .timeout(_kDefaultTimeout);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ByBugDatabase.update hatası: $e');
+    }
   }
 
   static Future<void> remove(String bucket, String tag) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugDatabase.remove: API başlatılmamış!');
+        return;
+      }
       final headers = await ByBugAuth._authHeaders();
       await http
           .post(
@@ -358,7 +448,9 @@ class ByBugDatabase {
             body: jsonEncode({'bucket': bucket, 'tag': tag}),
           )
           .timeout(_kDefaultTimeout);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('ByBugDatabase.remove hatası: $e');
+    }
   }
 
   static void listenAll(
@@ -383,6 +475,13 @@ class ByBugDatabase {
 
     Future<void> poll() async {
       try {
+        if (!ByBugDB.isInitialized()) {
+          _failCounts[key] = (_failCounts[key] ?? 0) + 1;
+          if (_pollTimers.containsKey(key)) {
+            scheduleNext(poll);
+          }
+          return;
+        }
         final headers = await ByBugAuth._authHeaders();
         final resp = await http
             .get(
@@ -411,8 +510,9 @@ class ByBugDatabase {
             }
           }
         }
-      } catch (_) {
+      } catch (e) {
         _failCounts[key] = (_failCounts[key] ?? 0) + 1;
+        debugPrint('ByBugDatabase.listenAll.poll hatası: $e');
       }
       if (_pollTimers.containsKey(key)) {
         scheduleNext(poll);
@@ -444,12 +544,17 @@ class ByBugDatabase {
     _pollTimers.clear();
     _lastIds.clear();
     _failCounts.clear();
+    debugPrint('✅ Tüm dinleyiciler durduruldu');
   }
 }
 
 class ByBugStorage {
   static Future<String?> uploadFile(String filePath) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugStorage.uploadFile: API başlatılmamış!');
+        return null;
+      }
       final token = await ByBugAuth._getToken();
       final uri = Uri.parse('${ByBugDB.apiBaseUrl}/storage/upload.php');
       final request = http.MultipartRequest('POST', uri);
@@ -475,6 +580,7 @@ class ByBugStorage {
     } on TimeoutException {
       return 'ERR:timeout';
     } catch (e) {
+      debugPrint('ByBugStorage.uploadFile hatası: $e');
       return 'ERR:$e';
     }
   }
@@ -486,6 +592,9 @@ class ByBugChannel {
     String description = '',
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!', []];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .post(
@@ -505,12 +614,16 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.createChannel hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
 
   static Future<List<dynamic>> listChannels() async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .get(
@@ -526,6 +639,7 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanit vermedi (zaman asimi)'];
     } catch (e) {
+      debugPrint('ByBugChannel.listChannels hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
@@ -535,6 +649,9 @@ class ByBugChannel {
     required String filePath,
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final uploadResult = await ByBugStorage.uploadFile(filePath);
       if (uploadResult == null || uploadResult.startsWith('ERR:')) {
         return [0, 'Gorsel yuklenemedi'];
@@ -558,12 +675,16 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.updateAvatar hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
 
   static Future<List<dynamic>> deleteChannel(String channelId) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .post(
@@ -579,6 +700,7 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.deleteChannel hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
@@ -589,6 +711,9 @@ class ByBugChannel {
     String type = 'text',
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .post(
@@ -608,6 +733,7 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.postToChannel hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
@@ -617,6 +743,10 @@ class ByBugChannel {
     String afterId = '0',
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugChannel.getFeed: API başlatılmamış!');
+        return [0, []];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .get(
@@ -629,13 +759,17 @@ class ByBugChannel {
       final decoded = _safeDecode(resp);
       if (decoded is! List) return [0, []];
       return [1, decoded];
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ByBugChannel.getFeed hatası: $e');
       return [0, []];
     }
   }
 
   static Future<List<dynamic>> subscribeToChannel(String channelId) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .post(
@@ -651,12 +785,16 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.subscribeToChannel hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
 
   static Future<List<dynamic>> unsubscribeFromChannel(String channelId) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .post(
@@ -672,12 +810,17 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.unsubscribeFromChannel hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
 
   static Future<List<dynamic>> getChannelMembers(String channelId) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugChannel.getChannelMembers: API başlatılmamış!');
+        return [0, [], 0, false];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .get(
@@ -698,7 +841,8 @@ class ByBugChannel {
         ];
       }
       return [0, [], 0, false];
-    } catch (_) {
+    } catch (e) {
+      debugPrint('ByBugChannel.getChannelMembers hatası: $e');
       return [0, [], 0, false];
     }
   }
@@ -709,6 +853,9 @@ class ByBugChannel {
     String description = '',
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .post(
@@ -728,6 +875,7 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.updateChannel hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
@@ -737,6 +885,9 @@ class ByBugChannel {
     required String targetUid,
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .post(
@@ -755,6 +906,7 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.addAdmin hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
@@ -764,6 +916,9 @@ class ByBugChannel {
     required String targetUid,
   }) async {
     try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
       final headers = await ByBugAuth._authHeaders();
       final resp = await http
           .post(
@@ -782,6 +937,7 @@ class ByBugChannel {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
+      debugPrint('ByBugChannel.removeAdmin hatası: $e');
       return [0, 'Sunucuya baglanilamadi'];
     }
   }
@@ -801,6 +957,16 @@ class ByBugChannel {
 
     Future<void> tick() async {
       try {
+        if (!ByBugDB.isInitialized()) {
+          _streamFailCount++;
+          if (_pollTimer != null) {
+            final backoffSeconds =
+                (_kPollInterval.inSeconds * (1 << _streamFailCount.clamp(0, 6)))
+                    .clamp(_kPollInterval.inSeconds, _kMaxBackoff.inSeconds);
+            _pollTimer = Timer(Duration(seconds: backoffSeconds), tick);
+          }
+          return;
+        }
         final headers = await ByBugAuth._authHeaders();
         final resp = await http
             .get(
@@ -824,8 +990,9 @@ class ByBugChannel {
             }
           }
         }
-      } catch (_) {
+      } catch (e) {
         _streamFailCount++;
+        debugPrint('ByBugChannel.streamChannel.tick hatası: $e');
       }
       if (_pollTimer != null) {
         final backoffSeconds =
@@ -843,5 +1010,6 @@ class ByBugChannel {
     _pollTimer = null;
     _lastPolledId = '0';
     _streamFailCount = 0;
+    debugPrint('✅ Stream durduruldu');
   }
 }
