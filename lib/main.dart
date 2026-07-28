@@ -41,9 +41,18 @@ void main() async {
         await MyProfileData.getMyProfile();
       }
     } catch (e, s) {
-      debugPrint('AUTH/PROFILE HATASI: $e\n$s');
-      startupError = e.toString();
-      isSignedIn = false;
+      debugPrint('AUTH/PROFILE HATASI (ilk deneme): $e\n$s');
+      await Future.delayed(const Duration(seconds: 2));
+      try {
+        isSignedIn = await ByBugAuth.isSignedIn();
+        if (isSignedIn) {
+          await MyProfileData.getMyProfile();
+        }
+      } catch (e2, s2) {
+        debugPrint('AUTH/PROFILE HATASI (retry): $e2\n$s2');
+        startupError = e2.toString();
+        isSignedIn = false;
+      }
     }
 
     runApp(MyApp(isSignedIn: isSignedIn, startupError: startupError));
