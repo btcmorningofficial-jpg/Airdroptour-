@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:airdrop/page/loading.dart';
 import 'package:airdrop/page/login.dart';
 import 'package:airdrop/services/profile.dart';
@@ -7,7 +8,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+// 🔥 HATALARI TELEFONA KAYDEDEN FONKSİYON
+void _hatayiKaydet(String mesaj) {
+  try {
+    final dosya = File('/storage/emulated/0/Download/airdrop_hata.txt');
+    dosya.writeAsStringSync('$mesaj\n', mode: FileMode.append);
+  } catch (e) {
+    print("HATA KAYDEDİLEMEDİ: $e");
+  }
+}
+
 void main() async {
+  // 🔥 TÜM FLUTTER HATALARINI YAKALA
+  FlutterError.onError = (FlutterErrorDetails detay) {
+    String msg = "🔥 FLUTTER HATA: ${detay.exception}\nSTACK: ${detay.stack}\n";
+    _hatayiKaydet(msg);
+    print(msg);
+  };
+
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
@@ -27,7 +45,6 @@ void main() async {
 
     await initializeDateFormatting('en', null);
 
-    // 🔥 KRİTİK: API URL'sini düzelt!
     ByBugDB.initialize(
       // Kendi sunucumuzdaki PHP + MySQL backend adresi
       url: "https://appairdroptour.yurtdisiisilanlari.com.tr",
@@ -39,17 +56,19 @@ void main() async {
     try {
       isSignedIn = await ByBugAuth.isSignedIn();
       if (isSignedIn) {
-        // 🔥 PROFİL YÜKLENEMEZSE ÇÖKMESİN!
         try {
           await MyProfileData.getMyProfile();
         } catch (e) {
-          debugPrint('PROFİL YÜKLEME HATASI: $e');
-          // Profil yüklenemezse bile devam et
-          isSignedIn = true; // Oturum açık kalsın
+          String msg = "PROFİL YÜKLEME HATASI: $e";
+          _hatayiKaydet(msg);
+          debugPrint(msg);
+          isSignedIn = true;
         }
       }
     } catch (e, s) {
-      debugPrint('AUTH/PROFILE HATASI (ilk deneme): $e\n$s');
+      String msg = "AUTH HATASI: $e\n$s";
+      _hatayiKaydet(msg);
+      debugPrint(msg);
       await Future.delayed(const Duration(seconds: 2));
       try {
         isSignedIn = await ByBugAuth.isSignedIn();
@@ -57,12 +76,16 @@ void main() async {
           try {
             await MyProfileData.getMyProfile();
           } catch (e) {
-            debugPrint('PROFİL YÜKLEME HATASI (retry): $e');
-            isSignedIn = true; // Oturum açık kalsın
+            String msg2 = "PROFİL YÜKLEME HATASI (retry): $e";
+            _hatayiKaydet(msg2);
+            debugPrint(msg2);
+            isSignedIn = true;
           }
         }
       } catch (e2, s2) {
-        debugPrint('AUTH/PROFILE HATASI (retry): $e2\n$s2');
+        String msg2 = "AUTH HATASI (retry): $e2\n$s2";
+        _hatayiKaydet(msg2);
+        debugPrint(msg2);
         startupError = e2.toString();
         isSignedIn = false;
       }
@@ -70,7 +93,9 @@ void main() async {
 
     runApp(MyApp(isSignedIn: isSignedIn, startupError: startupError));
   }, (error, stack) {
-    debugPrint('CAUGHT ERROR: $error\n$stack');
+    String msg = "🔥 ZONED HATA: $error\nSTACK: $stack\n";
+    _hatayiKaydet(msg);
+    debugPrint(msg);
   });
 }
 
