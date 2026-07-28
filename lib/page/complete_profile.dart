@@ -98,7 +98,9 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
     );
 
     if (!mounted) return;
-    push(context, HomePage());
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomePage()),
+    );
   }
 
   Widget _genderButton(String value, String label) {
