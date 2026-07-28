@@ -1,3 +1,4 @@
+// lib/page/loading.dart
 import 'package:airdrop/page/complete_profile.dart';
 import 'package:airdrop/page/home.dart';
 import 'package:airdrop/services/profile.dart';
@@ -25,9 +26,13 @@ class _LoadingPageState extends State<LoadingPage> {
         await Future.delayed(Durations.extralong4);
         if (!mounted) return;
         if (!MyProfileData.profileCompleted()) {
-          push(context, CompleteProfilePage());
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const CompleteProfilePage()),
+          );
         } else {
-          push(context, HomePage());
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomePage()),
+          );
         }
       } else if (MyProfileData.status() == "deactive") {
         if (!mounted) return;
