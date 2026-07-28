@@ -33,7 +33,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
 
   Future<void> _loadChannels() async {
     setState(() => _loadingList = true);
-    final result = await ByBugChannelList.listChannels();
+    final result = await ByBugChannel.listChannels();
     if (result[0] == 1) {
       final List<dynamic> items = result[1];
       setState(() {
