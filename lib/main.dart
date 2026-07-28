@@ -14,7 +14,7 @@ void _hatayiKaydet(String mesaj) {
     final dosya = File('/storage/emulated/0/Download/airdrop_hata.txt');
     dosya.writeAsStringSync('$mesaj\n', mode: FileMode.append);
   } catch (e) {
-    print("HATA KAYDEDİLEMEDİ: $e");
+    // Sessizce geç
   }
 }
 
@@ -23,21 +23,22 @@ void main() async {
   FlutterError.onError = (FlutterErrorDetails detay) {
     String msg = "🔥 FLUTTER HATA: ${detay.exception}\nSTACK: ${detay.stack}\n";
     _hatayiKaydet(msg);
-    print(msg);
+    debugPrint(msg);
   };
 
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Release modda da hatayı ekranda göster (beyaz/boş ekran yerine)
+    // Release modda da hatayı ekranda göster
     ErrorWidget.builder = (details) => Material(
-          color: Colors.white,
+          color: Colors.black,
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
                 details.exceptionAsString(),
-                style: const TextStyle(color: Colors.red, fontSize: 12),
+                style: const TextStyle(color: Colors.red, fontSize: 14),
+                textAlign: TextAlign.center,
               ),
             ),
           ),
@@ -45,30 +46,27 @@ void main() async {
 
     await initializeDateFormatting('en', null);
 
+    // 🔥 API'yi başlat
     ByBugDB.initialize(
-      // Kendi sunucumuzdaki PHP + MySQL backend adresi
       url: "https://appairdroptour.yurtdisiisilanlari.com.tr",
       authToken: "",
     );
 
     bool isSignedIn = false;
     String? startupError;
+
     try {
       isSignedIn = await ByBugAuth.isSignedIn();
       if (isSignedIn) {
         try {
           await MyProfileData.getMyProfile();
         } catch (e) {
-          String msg = "PROFİL YÜKLEME HATASI: $e";
-          _hatayiKaydet(msg);
-          debugPrint(msg);
+          _hatayiKaydet("PROFİL YÜKLEME HATASI: $e");
           isSignedIn = true;
         }
       }
     } catch (e, s) {
-      String msg = "AUTH HATASI: $e\n$s";
-      _hatayiKaydet(msg);
-      debugPrint(msg);
+      _hatayiKaydet("AUTH HATASI: $e\n$s");
       await Future.delayed(const Duration(seconds: 2));
       try {
         isSignedIn = await ByBugAuth.isSignedIn();
@@ -76,16 +74,12 @@ void main() async {
           try {
             await MyProfileData.getMyProfile();
           } catch (e) {
-            String msg2 = "PROFİL YÜKLEME HATASI (retry): $e";
-            _hatayiKaydet(msg2);
-            debugPrint(msg2);
+            _hatayiKaydet("PROFİL YÜKLEME HATASI (retry): $e");
             isSignedIn = true;
           }
         }
       } catch (e2, s2) {
-        String msg2 = "AUTH HATASI (retry): $e2\n$s2";
-        _hatayiKaydet(msg2);
-        debugPrint(msg2);
+        _hatayiKaydet("AUTH HATASI (retry): $e2\n$s2");
         startupError = e2.toString();
         isSignedIn = false;
       }
@@ -93,9 +87,8 @@ void main() async {
 
     runApp(MyApp(isSignedIn: isSignedIn, startupError: startupError));
   }, (error, stack) {
-    String msg = "🔥 ZONED HATA: $error\nSTACK: $stack\n";
-    _hatayiKaydet(msg);
-    debugPrint(msg);
+    _hatayiKaydet("🔥 ZONED HATA: $error\nSTACK: $stack");
+    debugPrint("🔥 ZONED HATA: $error");
   });
 }
 
@@ -158,9 +151,16 @@ class MyApp extends StatelessWidget {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Baslangic Hatasi'),
+                        backgroundColor: navColor,
+                        title: const Text(
+                          'Başlangıç Hatası',
+                          style: TextStyle(color: Colors.red),
+                        ),
                         content: SingleChildScrollView(
-                          child: Text(startupError!),
+                          child: Text(
+                            startupError!,
+                            style: TextStyle(color: textColor),
+                          ),
                         ),
                         actions: [
                           TextButton(
