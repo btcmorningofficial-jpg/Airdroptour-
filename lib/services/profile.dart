@@ -14,8 +14,13 @@ class MyProfileData extends ChangeNotifier {
     if (myUID == null) return;
     if (myUID.trim().isEmpty) return;
     var datas = await ByBugDatabase.get(bucket, myUID);
-    data.value = datas["value"];
-    data.notifyListeners();
+    final newValue = datas["value"];
+    // Sunucudan bos/basarisiz sonuc gelirse (network hatasi vb.) eski veriyi koru,
+    // ekrani bosaltma (race condition / profil sifirlanma sorunu icin duzeltme).
+    if (newValue is Map && newValue.isNotEmpty) {
+      data.value = Map<String, dynamic>.from(newValue);
+      data.notifyListeners();
+    }
   }
 
   static Future<Map<String, dynamic>> getProfile(String uid) async {
