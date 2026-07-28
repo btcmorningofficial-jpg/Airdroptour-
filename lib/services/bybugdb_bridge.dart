@@ -87,7 +87,7 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
-      return [0, 'Could not connect to server'];
+      return [0, 'Could not connect to server (register)'];
     }
   }
 
@@ -110,7 +110,7 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
-      return [0, 'Could not connect to server'];
+      return [0, 'Could not connect to server (login)'];
     }
   }
 
@@ -133,7 +133,7 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
-      return [0, 'Could not connect to server'];
+      return [0, 'Could not connect to server (google_login)'];
     }
   }
 
@@ -154,7 +154,7 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
-      return [0, 'Could not connect to server'];
+      return [0, 'Could not connect to server (delete_user)'];
     }
   }
 
@@ -174,7 +174,7 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
-      return [0, 'Could not connect to server'];
+      return [0, 'Could not connect to server (delete_self)'];
     }
   }
 
@@ -194,7 +194,7 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
-      return [0, 'Could not connect to server'];
+      return [0, 'Could not connect to server (forgot_password)'];
     }
   }
 
@@ -222,7 +222,7 @@ class ByBugAuth {
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
-      return [0, 'Could not connect to server'];
+      return [0, 'Could not connect to server (reset_password)'];
     }
   }
 
