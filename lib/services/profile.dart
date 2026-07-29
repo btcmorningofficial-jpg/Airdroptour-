@@ -427,61 +427,13 @@ List<Map<String, dynamic>> fillToThreeCryptos(
         }
       }
     }
-
-    debugPrint("✅ User favorite coins: ${result.length}");
-
-    // 🔥 2. If user has NO favorites, select 3 random coins from pool (registration moment)
-    if (result.isEmpty) {
-      debugPrint("⚠️ No user favorites found, selecting from pool...");
-      
-      if (pool != null && pool.isNotEmpty) {
-        // Shuffle pool and take 3 coins
-        List<Map<String, dynamic>> shuffledPool = List.from(pool);
-        shuffledPool.shuffle();
-        
-        for (var coin in shuffledPool) {
-          if (result.length >= 3) break;
-          try {
-            if (coin == null) continue;
-            String name = coin["name"]?.toString() ?? "";
-            if (name.isEmpty) continue;
-
-            Map<String, dynamic> newCoin = Map<String, dynamic>.from(coin);
-
-            if (newCoin["image"] == null || newCoin["image"].toString().isEmpty) {
-              newCoin["image"] = _getDefaultImageForCoin(name);
-            }
-            if (newCoin["details"] == null || newCoin["details"].toString().isEmpty) {
-              newCoin["details"] = "$name cryptocurrency";
-            }
-
-            result.add(newCoin);
-          } catch (e) {
-            debugPrint("⚠️ Pool coin selection error: $e");
-            continue;
-          }
-        }
-      }
-    }
-
-    // 🔥 3. If still empty (pool is also empty), show default 3 coins
-    if (result.isEmpty) {
-      debugPrint("⚠️ Pool is empty, showing DEFAULT coins");
-      result = _getDefaultCryptos();
-    }
-
-    // 🔥 4. If more than 3, trim
-    if (result.length > 3) {
-      result = result.sublist(0, 3);
-    }
-
-    debugPrint("✅ Displayed coins: ${result.length}");
-    return result;
-
-  } catch (e) {
-    debugPrint("❌ fillToThreeCryptos CRASHED: $e");
-    return _getDefaultCryptos();
   }
+  if (result.length > 3) {
+    result = result.sublist(0, 3);
+  }
+  // Sadece kullanicinin kendi sectigi coinler gosterilir.
+  // Havuzdan otomatik doldurma / rastgele ekleme YAPILMAZ.
+  return result;
 }
 
 // ✅ Default image for coin names
