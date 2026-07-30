@@ -427,6 +427,8 @@ List<Map<String, dynamic>> fillToThreeCryptos(
         }
       }
     }
+  } catch (e) {
+    debugPrint("⚠️ Favorite coin list error: $e");
   }
   if (result.length > 3) {
     result = result.sublist(0, 3);
