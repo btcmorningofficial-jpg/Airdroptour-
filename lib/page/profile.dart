@@ -43,18 +43,11 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    MyProfileData.data.addListener(_onCryptoDataChanged);
     Future.delayed(Duration.zero, _loadProfileCrypto);
-  }
-
-  Future<void> _onCryptoDataChanged() async {
-    if (!mounted) return;
-    await _loadProfileCrypto();
   }
 
   @override
   void dispose() {
-    MyProfileData.data.removeListener(_onCryptoDataChanged);
     super.dispose();
   }
 
