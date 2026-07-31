@@ -1013,4 +1013,88 @@ class ByBugChannel {
     _streamFailCount = 0;
     debugPrint('✅ Stream durduruldu');
   }
+  static Future<List<dynamic>> redeemReferral({
+    required String refCode,
+  }) async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .post(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/redeem_referral.php'),
+            headers: headers,
+            body: jsonEncode({'ref': refCode}),
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      if (j == null) return [0, 'Sunucudan geçersiz yanıt alındı'];
+      if (j['status'] == 1) return [1, j['referred_by']];
+      return [0, j['message'] ?? 'Referans kodu kullanılamadı'];
+    } on TimeoutException {
+      return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
+    } catch (e) {
+      debugPrint('ByBugChannel.redeemReferral hatası: $e');
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<List<dynamic>> getInviteQuota({
+    required String channelId,
+  }) async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .get(
+            Uri.parse(
+                '${ByBugDB.apiBaseUrl}/db/channel_invite_status.php?channel_id=$channelId'),
+            headers: headers,
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      if (j == null) return [0, 'Sunucudan geçersiz yanıt alındı'];
+      if (j['status'] == 1) return [1, j];
+      return [0, j['message'] ?? 'Kota bilgisi alınamadı'];
+    } on TimeoutException {
+      return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
+    } catch (e) {
+      debugPrint('ByBugChannel.getInviteQuota hatası: $e');
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<List<dynamic>> redeemChannelInvite({
+    required String channelId,
+    required String inviterUid,
+  }) async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .post(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_invite_redeem.php'),
+            headers: headers,
+            body: jsonEncode({
+              'channel_id': channelId,
+              'inviter_uid': inviterUid,
+            }),
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      if (j == null) return [0, 'Sunucudan geçersiz yanıt alındı'];
+      if (j['status'] == 1) return [1];
+      return [0, j['message'] ?? 'Katılamadı', j['limit'], j['used']];
+    } on TimeoutException {
+      return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
+    } catch (e) {
+      debugPrint('ByBugChannel.redeemChannelInvite hatası: $e');
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
 }
