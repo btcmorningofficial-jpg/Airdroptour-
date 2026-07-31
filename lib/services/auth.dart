@@ -34,7 +34,7 @@ class Auth extends ChangeNotifier {
       var x = await ByBugAuth.loginWithGoogle(idToken);
       if (x[0] == 1) {
         if (!context.mounted) return;
-        push(context, LoadingPage());
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoadingPage()));
       } else {
         if (!context.mounted) return;
         getErrorSnack(context, x[1]);
@@ -64,7 +64,7 @@ class Auth extends ChangeNotifier {
     );
     if (x[0] == 1) {
       if (!context.mounted) return;
-      push(context, LoadingPage());
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoadingPage()));
     } else {
       if (!context.mounted) return;
 
@@ -76,7 +76,7 @@ class Auth extends ChangeNotifier {
     var x = await ByBugAuth.login(email.text, password.text);
     if (x[0] == 1) {
       if (!context.mounted) return;
-      push(context, LoadingPage());
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoadingPage()));
     } else {
       if (!context.mounted) return;
 

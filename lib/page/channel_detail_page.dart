@@ -236,7 +236,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     if (url == null || url.startsWith('ERR:')) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Resim yuklenemedi')),
+          const SnackBar(content: Text('Image could not be uploaded')),
         );
       }
       return;
@@ -248,7 +248,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     );
     if (result[0] != 1 && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result[1]?.toString() ?? 'Paylasim yapilamadi')),
+        SnackBar(content: Text(result[1]?.toString() ?? 'Post could not be shared')),
       );
     }
   }

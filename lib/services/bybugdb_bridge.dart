@@ -655,7 +655,7 @@ class ByBugChannel {
       }
       final uploadResult = await ByBugStorage.uploadFile(filePath);
       if (uploadResult == null || uploadResult.startsWith('ERR:')) {
-        return [0, 'Gorsel yuklenemedi'];
+        return [0, 'Image could not be uploaded'];
       }
 
       final headers = await ByBugAuth._authHeaders();
@@ -730,7 +730,7 @@ class ByBugChannel {
       final j = _safeDecode(resp);
       if (j == null) return [0, 'Sunucudan geçersiz yanıt alındı'];
       if (j['status'] == 1) return [1, j['post']];
-      return [0, j['message'] ?? 'Paylasim yapilamadi'];
+      return [0, j['message'] ?? 'Post could not be shared'];
     } on TimeoutException {
       return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
     } catch (e) {
