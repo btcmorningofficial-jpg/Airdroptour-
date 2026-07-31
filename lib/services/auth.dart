@@ -10,6 +10,7 @@ class Auth extends ChangeNotifier {
   static TextEditingController email = TextEditingController();
   static TextEditingController password = TextEditingController();
   static TextEditingController name = TextEditingController();
+  static TextEditingController referralCode = TextEditingController();
 
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email'],
@@ -63,6 +64,9 @@ class Auth extends ChangeNotifier {
       },
     );
     if (x[0] == 1) {
+      if (referralCode.text.trim().isNotEmpty) {
+        await ByBugChannel.redeemReferral(refCode: referralCode.text.trim());
+      }
       if (!context.mounted) return;
       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoadingPage()));
     } else {
