@@ -565,7 +565,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     final channelId = widget.channel['id'];
     final channelName = widget.channel['name'] ?? 'this channel';
     final link =
-        '${ByBugDB.apiBaseUrl}/join.php?c=$channelId&u=${widget.currentUid}';
+        'https://go.btcmorning.com/join.php?c=$channelId&u=${widget.currentUid}';
     await Share.share('Join "$channelName" on Airdroptour!\n$link');
   }
 
