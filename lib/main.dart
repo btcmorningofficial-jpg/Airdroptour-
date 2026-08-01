@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:airdrop/page/loading.dart';
 import 'package:airdrop/page/login.dart';
+import 'package:airdrop/page/channel_detail_page.dart';
+import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
-import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -31,6 +32,9 @@ Future<void> _handleIncomingLink(Uri uri) async {
   final signedIn = await ByBugAuth.isSignedIn();
   if (!signedIn) return;
 
+  final currentUid = await ByBugAuth.getUID();
+  if (currentUid == null) return;
+
   final result = await ByBugChannel.redeemChannelInvite(
     channelId: channelId,
     inviterUid: inviterUid,
@@ -39,12 +43,33 @@ Future<void> _handleIncomingLink(Uri uri) async {
   final ctx = navigatorKey.currentContext;
   if (ctx == null) return;
 
-  ScaffoldMessenger.of(ctx).showSnackBar(
-    SnackBar(
-      content: Text(
-        result[0] == 1
-            ? 'You joined the channel!'
-            : (result[1]?.toString() ?? 'Could not join channel'),
+  if (result[0] != 1) {
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Text(result[1]?.toString() ?? 'Could not join channel'),
+      ),
+    );
+    return;
+  }
+
+  final channelsResult = await ByBugChannel.listChannels();
+  if (channelsResult[0] != 1) return;
+
+  final channels = List<dynamic>.from(channelsResult[1]);
+  Map<String, dynamic>? targetChannel;
+  for (final c in channels) {
+    if (c['id'].toString() == channelId) {
+      targetChannel = Map<String, dynamic>.from(c);
+      break;
+    }
+  }
+  if (targetChannel == null) return;
+
+  Navigator.of(ctx).push(
+    MaterialPageRoute(
+      builder: (_) => ChannelDetailPage(
+        channel: targetChannel!,
+        currentUid: currentUid,
       ),
     ),
   );

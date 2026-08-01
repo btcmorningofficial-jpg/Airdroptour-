@@ -574,6 +574,10 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         titleSpacing: 0,
         backgroundColor: bg,
         title: Row(children: [
