@@ -1241,3 +1241,134 @@ class ByBugInvite {
     }
   }
 }
+
+class ByBugInvite {
+  static Future<List<Map<String, dynamic>>> getInvitableUsers({
+    required String channelId,
+    String search = '',
+  }) async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugInvite.getInvitableUsers: API başlatılmamış!');
+        return [];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .get(
+            Uri.parse(
+              '${ByBugDB.apiBaseUrl}/db/channel_invite_list_users.php?channel_id=${Uri.encodeComponent(channelId)}&search=${Uri.encodeComponent(search)}',
+            ),
+            headers: headers,
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      if (j == null || j['status'] != 1) return [];
+      final list = j['users'] ?? [];
+      return (list as List).map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (e) {
+      debugPrint('ByBugInvite.getInvitableUsers hatası: $e');
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> sendChannelInvites({
+    required String channelId,
+    required List<String> targetUids,
+  }) async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .post(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_invite_send.php'),
+            headers: headers,
+            body: jsonEncode({
+              'channel_id': channelId,
+              'target_uids': targetUids,
+            }),
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      if (j == null) return [0, 'Sunucudan geçersiz yanıt alındı'];
+      if (j['status'] == 1) return [1, j['sent'] ?? []];
+      return [0, j['message'] ?? 'Could not send invites'];
+    } on TimeoutException {
+      return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
+    } catch (e) {
+      debugPrint('ByBugInvite.sendChannelInvites hatası: $e');
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getNotifications() async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        debugPrint('⚠️ ByBugInvite.getNotifications: API başlatılmamış!');
+        return [];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .get(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/notifications_list.php'),
+            headers: headers,
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      if (j == null || j['status'] != 1) return [];
+      final list = j['notifications'] ?? [];
+      return (list as List).map((e) => Map<String, dynamic>.from(e)).toList();
+    } catch (e) {
+      debugPrint('ByBugInvite.getNotifications hatası: $e');
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> respondToChannelInvite({
+    required String channelId,
+    required bool accept,
+  }) async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .post(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_invite_respond.php'),
+            headers: headers,
+            body: jsonEncode({
+              'channel_id': channelId,
+              'decision': accept ? 'accept' : 'decline',
+            }),
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      if (j == null) return [0, 'Sunucudan geçersiz yanıt alındı'];
+      if (j['status'] == 1) return [1, 'ok'];
+      return [0, j['message'] ?? 'Action failed'];
+    } on TimeoutException {
+      return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
+    } catch (e) {
+      debugPrint('ByBugInvite.respondToChannelInvite hatası: $e');
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<void> markNotificationRead(String tag) async {
+    try {
+      if (!ByBugDB.isInitialized()) return;
+      final headers = await ByBugAuth._authHeaders();
+      await http
+          .post(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/notifications_mark_read.php'),
+            headers: headers,
+            body: jsonEncode({'notif_tag': tag}),
+          )
+          .timeout(_kDefaultTimeout);
+    } catch (e) {
+      debugPrint('ByBugInvite.markNotificationRead hatası: $e');
+    }
+  }
+}
