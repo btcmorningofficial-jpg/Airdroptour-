@@ -636,6 +636,21 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         tooltip: 'Invite',
         onPressed: _shareInviteLink,
       ),
+    IconButton(
+      icon: const Icon(Icons.group_add, color: Colors.white),
+      tooltip: 'Invite Members',
+      onPressed: () async {
+        final sent = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChannelInvitePage(channelId: widget.channel['id']),
+          ),
+        );
+        if (sent == true && mounted) {
+          _loadMembers();
+        }
+      },
+    ),
           if (_isOwner)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.white),
