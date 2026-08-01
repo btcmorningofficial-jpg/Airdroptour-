@@ -235,15 +235,15 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: navColor,
-        title: Text("Favoriden Çıkar", style: TextStyle(color: textColor)),
+        title: Text("Remove from Favorites", style: TextStyle(color: textColor)),
         content: Text(
-          "$coinName favorilerinden çıkarmak istediğinize emin misiniz?",
+          "Are you sure you want to remove $coinName from favorites?",
           style: TextStyle(color: textColor.withOpacity(0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("İptal", style: TextStyle(color: textColor)),
+            child: Text("Cancel", style: TextStyle(color: textColor)),
           ),
           TextButton(
             onPressed: () async {
@@ -251,7 +251,7 @@ class _ProfilePageState extends State<ProfilePage> {
               await _removeFavoriteCoin(coinName);
             },
             child: Text(
-              "Çıkar",
+              "Remove",
               style: TextStyle(color: Colors.red),
             ),
           ),
