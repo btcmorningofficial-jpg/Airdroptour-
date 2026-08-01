@@ -11,6 +11,7 @@ import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/page/channel_settings_page.dart';
+import 'package:share_plus/share_plus.dart';
 
 Map<String, dynamic> _asReactionsMap(dynamic v) => (v is Map) ? Map<String, dynamic>.from(v) : <String, dynamic>{};
 
@@ -560,6 +561,14 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     });
   }
 
+  Future<void> _shareInviteLink() async {
+    final channelId = widget.channel['id'];
+    final channelName = widget.channel['name'] ?? 'this channel';
+    final link =
+        '${ByBugDB.apiBaseUrl}/join.php?c=$channelId&u=${widget.currentUid}';
+    await Share.share('Join "$channelName" on Airdroptour!\n$link');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -618,6 +627,11 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
+      IconButton(
+        icon: const Icon(Icons.person_add_alt, color: Colors.white),
+        tooltip: 'Invite',
+        onPressed: _shareInviteLink,
+      ),
           if (_isOwner)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.white),
