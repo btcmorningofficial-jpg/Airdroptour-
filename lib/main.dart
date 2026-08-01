@@ -7,6 +7,7 @@ import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:app_links/app_links.dart';
 
 // 🔥 HATALARI TELEFONA KAYDEDEN FONKSİYON
 void _hatayiKaydet(String mesaj) {
@@ -18,6 +19,36 @@ void _hatayiKaydet(String mesaj) {
   }
 }
 
+
+final navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> _handleIncomingLink(Uri uri) async {
+  if (uri.host != 'join') return;
+  final channelId = uri.queryParameters['c'];
+  final inviterUid = uri.queryParameters['u'];
+  if (channelId == null || inviterUid == null) return;
+
+  final signedIn = await ByBugAuth.isSignedIn();
+  if (!signedIn) return;
+
+  final result = await ByBugChannel.redeemChannelInvite(
+    channelId: channelId,
+    inviterUid: inviterUid,
+  );
+
+  final ctx = navigatorKey.currentContext;
+  if (ctx == null) return;
+
+  ScaffoldMessenger.of(ctx).showSnackBar(
+    SnackBar(
+      content: Text(
+        result[0] == 1
+            ? 'You joined the channel!'
+            : (result[1]?.toString() ?? 'Could not join channel'),
+      ),
+    ),
+  );
+}
 void main() async {
   // 🔥 TÜM FLUTTER HATALARINI YAKALA
   FlutterError.onError = (FlutterErrorDetails detay) {
@@ -51,6 +82,10 @@ void main() async {
       url: "https://appairdroptour.yurtdisiisilanlari.com.tr",
       authToken: "",
     );
+
+  AppLinks().uriLinkStream.listen((uri) {
+    _handleIncomingLink(uri);
+  });
 
     bool isSignedIn = false;
     String? startupError;
@@ -100,6 +135,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Airdroptour',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
