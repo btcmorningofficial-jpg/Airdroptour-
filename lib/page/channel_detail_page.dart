@@ -65,11 +65,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     }
   }
 
-  List<Map<String, dynamic>> get _sortedPosts {
-    final pinned = _posts.where((p) => p['pinned'] == true).toList();
-    final rest = _posts.where((p) => p['pinned'] != true).toList();
-    return [...pinned, ...rest];
-  }
+  List<Map<String, dynamic>> get _sortedPosts => _posts;
 
   @override
   void initState() {
