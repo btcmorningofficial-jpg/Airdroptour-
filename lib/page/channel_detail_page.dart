@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:airdrop/page/channel_invite_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'channel_info_page.dart';
 import 'package:record/record.dart';

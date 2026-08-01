@@ -19,6 +19,7 @@ import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:flutter/material.dart';
+import 'package:airdrop/page/notifications_page.dart';
 
 ValueNotifier<List<Widget>> postsW = ValueNotifier([]);
 PageController matchController = PageController();
