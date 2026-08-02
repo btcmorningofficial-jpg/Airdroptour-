@@ -21,6 +21,7 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
   int _memberCount = 0;
   bool _loading = true;
   bool _isSubscribed = false;
+  String? _avatarUrl;
 
   bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
 
@@ -41,6 +42,24 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
       });
     } else if (mounted) {
       setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _changeAvatar() async {
+    final path = await pickImage();
+    if (path == null) return;
+    final result = await ByBugChannel.updateAvatar(
+      channelId: widget.channel['id'],
+      filePath: path,
+    );
+    if (result[0] == 1 && mounted) {
+      setState(() {
+        _avatarUrl = (result[1]['avatar_url'] ?? '').toString();
+      });
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result[1]?.toString() ?? 'Could not update avatar')),
+      );
     }
   }
 
