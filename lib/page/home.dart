@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:airdrop/page/rain_explorer.dart';
 import 'package:airdrop/page/messages/dm.dart';
 import 'package:airdrop/page/profile.dart';
@@ -38,10 +40,35 @@ class _HomePageState extends State<HomePage> {
   static DateTime? _lastLoadedAt;
   static const Duration _minReloadGap = Duration(seconds: 20);
 
+  final ValueNotifier<int> _unreadCount = ValueNotifier(0);
+  Timer? _notifTimer;
+
   @override
   void initState() {
     super.initState();
     _loadHomeData();
+    _loadUnreadCount();
+    _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _loadUnreadCount();
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifTimer?.cancel();
+    _unreadCount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final list = await ByBugInvite.getNotifications();
+      final count = list.where((n) => n['read'] != true).length;
+      if (!mounted) return;
+      _unreadCount.value = count;
+    } catch (_) {
+      // sessizce yut, rozet güncellenmez
+    }
   }
 
   Future<void> _loadHomeData({bool force = false}) async {
@@ -124,14 +151,28 @@ class _HomePageState extends State<HomePage> {
                                 child: Icon(Icons.messenger_outline, size: 26),
                               ),
                               SizedBox(width: 10),
-                            GestureDetector(
-                onTap: () {
-                  push(context, const NotificationsPage());
-                },
-                child: const Icon(Icons.notifications_none, size: 26),
-              ),
-              SizedBox(width: 10),
-            ],
+                              GestureDetector(
+                                onTap: () async {
+                                  await push(context, const NotificationsPage());
+                                  _loadUnreadCount();
+                                },
+                                child: ValueListenableBuilder<int>(
+                                  valueListenable: _unreadCount,
+                                  builder: (context, count, child) {
+                                    return Badge(
+                                      isLabelVisible: count > 0,
+                                      label: Text(count > 99 ? '99+' : '$count'),
+                                      backgroundColor: Colors.redAccent,
+                                      child: const Icon(
+                                        Icons.notifications_none,
+                                        size: 26,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                            ],
                           ),
                         ),
                         Expanded(

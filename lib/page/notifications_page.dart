@@ -112,19 +112,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   height: 20,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.check_circle, color: Colors.green),
-                                      onPressed: () => _respond(n, true),
+                              : isRead
+                                  ? const Text('Responded', style: TextStyle(color: Colors.white38, fontSize: 12))
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.check_circle, color: Colors.green),
+                                          onPressed: () => _respond(n, true),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.cancel, color: Colors.redAccent),
+                                          onPressed: () => _respond(n, false),
+                                        ),
+                                      ],
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.cancel, color: Colors.redAccent),
-                                      onPressed: () => _respond(n, false),
-                                    ),
-                                  ],
-                                ),
                         );
                       }
                       return ListTile(
