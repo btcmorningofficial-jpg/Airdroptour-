@@ -232,6 +232,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     setState(() => _isUploadingImage = true);
     final url = await ByBugStorage.uploadFile(path);
     setState(() => _isUploadingImage = false);
+    final caption = _postController.text.trim();
     if (url == null || url.startsWith('ERR:')) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
