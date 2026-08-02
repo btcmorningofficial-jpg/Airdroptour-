@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/bybugdb_bridge.dart';
+import 'package:airdrop/widget/image.dart';
 
 class ChannelInfoPage extends StatefulWidget {
   final Map<String, dynamic> channel;
@@ -122,7 +123,7 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
   Widget build(BuildContext context) {
     final name = (widget.channel['name'] ?? '').toString();
     final description = (widget.channel['description'] ?? '').toString();
-    final photo = (widget.channel['avatar_url'] ?? '').toString();
+    final photo = (_avatarUrl ?? widget.channel['avatar_url'] ?? '').toString();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B0B0F),
@@ -144,7 +145,9 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
                 Center(
                   child: Column(
                     children: [
-                      CircleAvatar(
+              GestureDetector(
+                onTap: _isOwner ? _changeAvatar : null,
+                child: CircleAvatar(
                         radius: 48,
                         backgroundImage:
                             photo.isNotEmpty ? NetworkImage(photo) : null,
@@ -152,6 +155,7 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
                             ? const Icon(Icons.groups, size: 40)
                             : null,
                       ),
+              ),
                       const SizedBox(height: 12),
                       Text(
                         name,

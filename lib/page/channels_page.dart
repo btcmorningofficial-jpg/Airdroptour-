@@ -3,6 +3,7 @@ import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/page/channel_detail_page.dart';
+import 'package:airdrop/page/home.dart';
 
 class ChannelsPage extends StatefulWidget {
   const ChannelsPage({super.key});
@@ -172,7 +173,15 @@ class _ChannelsPageState extends State<ChannelsPage> {
         iconTheme: IconThemeData(color: textColor),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const HomePage()),
+              );
+            }
+          },
         ),
         title: h1('Channels'),
       ),
