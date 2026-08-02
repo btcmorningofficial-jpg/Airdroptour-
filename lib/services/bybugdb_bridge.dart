@@ -710,6 +710,7 @@ class ByBugChannel {
     required String channelId,
     required String content,
     String type = 'text',
+    String? caption,
   }) async {
     try {
       if (!ByBugDB.isInitialized()) {
@@ -724,6 +725,7 @@ class ByBugChannel {
               'channel_id': channelId,
               'content': content,
               'type': type,
+              if (caption != null && caption.isNotEmpty) 'caption': caption,
             }),
           )
           .timeout(_kDefaultTimeout);

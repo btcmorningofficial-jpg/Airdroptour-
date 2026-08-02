@@ -57,6 +57,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     if (!_isOwner) return;
     final path = await pickImage();
     if (path == null) return;
+    final caption = _postController.text.trim();
     final result = await ByBugChannel.updateAvatar(channelId: widget.channel['id'], filePath: path);
     if (result[0] == 1) {
       setState(() { _avatarUrl = result[1]['avatar_url']; });
@@ -243,8 +244,11 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       channelId: widget.channel['id'],
       content: url,
       type: 'image',
+      caption: caption.isNotEmpty ? caption : null,
     );
-    if (result[0] != 1 && mounted) {
+    if (result[0] == 1) {
+      _postController.clear();
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result[1]?.toString() ?? 'Post could not be shared')),
       );
@@ -798,13 +802,25 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                                 ],
                               )
                             : post['type'] == 'image'
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: AirdroptourImage(
-                          post['content']?.toString() ?? '',
-                          fit: BoxFit.cover,
-                        ),
-                      )
+                    ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: AirdroptourImage(
+                        post['content']?.toString() ?? '',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    if ((post['caption'] ?? '').toString().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        post['caption'].toString(),
+                        style: TextStyle(color: textColor, height: 1.35),
+                      ),
+                    ],
+                  ],
+                )
                     : Text(
                                 post['content']?.toString() ?? '',
                                 style: TextStyle(color: textColor, height: 1.35),
@@ -837,6 +853,17 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                       ),
                     ),
                   ),
+              const SizedBox(width: 10),
+              IconButton(
+                onPressed: _isUploadingImage ? null : _sendImage,
+                icon: _isUploadingImage
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(Icons.image_outlined, color: textColor),
+              ),
                   const SizedBox(width: 10),
                   IconButton(
                     onPressed: _isUploadingVoice
