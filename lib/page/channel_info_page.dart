@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/bybugdb_bridge.dart';
 import 'package:airdrop/widget/image.dart';
+import 'package:cosmos/cosmos.dart';
 
 class ChannelInfoPage extends StatefulWidget {
   final Map<String, dynamic> channel;
