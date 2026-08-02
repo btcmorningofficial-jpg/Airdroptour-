@@ -1229,3 +1229,40 @@ class ByBugInvite {
     }
   }
 }
+
+  static Future<bool> deleteNotification(String tag) async {
+    try {
+      if (!ByBugDB.isInitialized()) return false;
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .post(
+            Uri.parse("${ByBugDB.apiBaseUrl}/db/notifications_delete.php"),
+            headers: headers,
+            body: jsonEncode({"notif_tag": tag}),
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      return j != null && j["status"] == 1;
+    } catch (e) {
+      debugPrint("ByBugInvite.deleteNotification hatasi: $e");
+      return false;
+    }
+  }
+
+  static Future<bool> clearAllNotifications() async {
+    try {
+      if (!ByBugDB.isInitialized()) return false;
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .post(
+            Uri.parse("${ByBugDB.apiBaseUrl}/db/notifications_clear.php"),
+            headers: headers,
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      return j != null && j["status"] == 1;
+    } catch (e) {
+      debugPrint("ByBugInvite.clearAllNotifications hatasi: $e");
+      return false;
+    }
+  }

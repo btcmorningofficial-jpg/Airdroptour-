@@ -46,12 +46,78 @@ class _NotificationsPageState extends State<NotificationsPage> {
       await ByBugInvite.markNotificationRead(tag);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(accept ? 'You joined the channel' : 'Invite declined')),
+        SnackBar(
+          content: Text(accept ? 'You joined the channel' : 'Invite declined'),
+        ),
       );
       _load();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result[1]?.toString() ?? 'Action failed')),
+      );
+    }
+  }
+
+  Future<void> _deleteNotification(Map<String, dynamic> n) async {
+    final tag = n['notif_tag'].toString();
+    final removedIndex = _notifications.indexOf(n);
+    setState(() => _notifications.remove(n));
+
+    final ok = await ByBugInvite.deleteNotification(tag);
+    if (!mounted) return;
+
+    if (!ok) {
+      setState(() {
+        if (removedIndex >= 0 && removedIndex <= _notifications.length) {
+          _notifications.insert(removedIndex, n);
+        } else {
+          _notifications.add(n);
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not delete notification')),
+      );
+    }
+  }
+
+  Future<void> _clearAll() async {
+    if (_notifications.isEmpty) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear all notifications?'),
+        content: const Text(
+          'This will remove all notifications from this list. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(
+              'Clear all',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    final previous = List<Map<String, dynamic>>.from(_notifications);
+    setState(() => _notifications = []);
+
+    final ok = await ByBugInvite.clearAllNotifications();
+    if (!mounted) return;
+
+    if (!ok) {
+      setState(() => _notifications = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not clear notifications')),
       );
     }
   }
@@ -64,6 +130,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
         backgroundColor: bg,
         title: const Text('Notifications', style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          if (_notifications.isNotEmpty)
+            TextButton(
+              onPressed: _clearAll,
+              child: const Text(
+                'Clear all',
+                style: TextStyle(color: Colors.redAccent),
+              ),
+            ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -90,9 +166,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       final isResponding = _responding.contains(tag);
                       final isRead = n['read'] == true;
 
+                      Widget tile;
                       if (type == 'channel_invite') {
                         final channelName = (n['channel_name'] ?? 'Channel').toString();
-                        return ListTile(
+                        tile = ListTile(
                           tileColor: isRead ? null : Colors.white.withOpacity(0.03),
                           leading: CircleAvatar(
                             backgroundColor: navColor.withOpacity(0.2),
@@ -113,7 +190,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : isRead
-                                  ? const Text('Responded', style: TextStyle(color: Colors.white38, fontSize: 12))
+                                  ? const Text(
+                                      'Responded',
+                                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                                    )
                                   : Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
@@ -128,12 +208,26 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                       ],
                                     ),
                         );
+                      } else {
+                        tile = ListTile(
+                          title: Text(
+                            n['message']?.toString() ?? '',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        );
                       }
-                      return ListTile(
-                        title: Text(
-                          n['message']?.toString() ?? '',
-                          style: const TextStyle(color: Colors.white),
+
+                      return Dismissible(
+                        key: ValueKey(tag),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: Colors.redAccent.withOpacity(0.85),
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(Icons.delete, color: Colors.white),
                         ),
+                        onDismissed: (_) => _deleteNotification(n),
+                        child: tile,
                       );
                     },
                   ),
