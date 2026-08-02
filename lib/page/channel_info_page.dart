@@ -129,7 +129,12 @@ class _ChannelInfoPageState extends State<ChannelInfoPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Channel Info'),
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const Text('Channel Info', style: TextStyle(color: Colors.white)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
