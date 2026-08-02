@@ -1267,3 +1267,4 @@ class ByBugInvite {
       return false;
     }
   }
+}
