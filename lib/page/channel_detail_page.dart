@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:airdrop/page/channel_invite_page.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -229,10 +230,47 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   Future<void> _sendImage() async {
     final path = await pickImage();
     if (path == null) return;
+    final captionController = TextEditingController(text: _postController.text.trim());
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: bg,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.file(File(path), height: 240, fit: BoxFit.cover),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: captionController,
+                style: TextStyle(color: textColor),
+                maxLines: 3,
+                decoration: const InputDecoration(hintText: 'Add a caption...'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     setState(() => _isUploadingImage = true);
     final url = await ByBugStorage.uploadFile(path);
     setState(() => _isUploadingImage = false);
-    final caption = _postController.text.trim();
+    final caption = captionController.text.trim();
     if (url == null || url.startsWith('ERR:')) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
