@@ -1230,7 +1230,6 @@ class ByBugInvite {
       debugPrint('ByBugInvite.markNotificationRead hatası: $e');
     }
   }
-}
 
   static Future<bool> deleteNotification(String tag) async {
     try {
