@@ -536,7 +536,9 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   }
 
   Future<void> _editPost(Map<String, dynamic> post) async {
-    final controller = TextEditingController(text: post['content']?.toString() ?? '');
+    final isImage = post['type'] == 'image';
+    final fieldKey = isImage ? 'caption' : 'content';
+    final controller = TextEditingController(text: post[fieldKey]?.toString() ?? '');
     final newText = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -548,18 +550,19 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         ],
       ),
     );
-    if (newText == null || newText.isEmpty) return;
+    if (newText == null) return;
+    if (!isImage && newText.isEmpty) return;
 
     final channelId = widget.channel['id'];
     final bucket = 'channel_posts:$channelId';
     final postId = post['id'].toString();
     final updated = Map<String, dynamic>.from(post);
-    updated['content'] = newText;
+    updated[fieldKey] = newText;
     await ByBugDatabase.update(bucket, postId, updated);
 
     setState(() {
       final idx = _posts.indexWhere((p) => p['id'].toString() == postId);
-      if (idx != -1) _posts[idx]['content'] = newText;
+      if (idx != -1) _posts[idx][fieldKey] = newText;
     });
   }
 
