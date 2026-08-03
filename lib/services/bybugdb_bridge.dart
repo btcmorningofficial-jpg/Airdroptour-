@@ -645,6 +645,37 @@ class ByBugChannel {
     }
   }
 
+  static Future<List<dynamic>> setChannelPremium({
+    required String channelId,
+    required bool isPremium,
+  }) async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API baslatilmamis!'];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .post(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_set_premium.php'),
+            headers: headers,
+            body: jsonEncode({
+              'channel_id': channelId,
+              'is_premium': isPremium,
+            }),
+          )
+          .timeout(_kDefaultTimeout);
+      final decoded = jsonDecode(resp.body);
+      if (decoded is! Map) return [0, 'Sunucudan gecersiz yanit alindi'];
+      if (decoded['status'] == 1) return [1, decoded['channel']];
+      return [0, decoded['message'] ?? 'Islem basarisiz'];
+    } on TimeoutException {
+      return [0, 'Sunucu yanit vermedi (zaman asimi)'];
+    } catch (e) {
+      debugPrint('ByBugChannel.setChannelPremium hatasi: $e');
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
   static Future<List<dynamic>> updateAvatar({
     required String channelId,
     required String filePath,
