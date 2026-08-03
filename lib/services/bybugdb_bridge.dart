@@ -591,6 +591,7 @@ class ByBugChannel {
   static Future<List<dynamic>> createChannel({
     required String name,
     String description = '',
+    String category = 'General',
   }) async {
     try {
       if (!ByBugDB.isInitialized()) {
@@ -601,7 +602,7 @@ class ByBugChannel {
           .post(
             Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_create.php'),
             headers: headers,
-            body: jsonEncode({'name': name, 'description': description}),
+            body: jsonEncode({'name': name, 'description': description, 'category': category}),
           )
           .timeout(_kDefaultTimeout);
       final j = _safeDecode(resp);
@@ -885,6 +886,7 @@ class ByBugChannel {
     required String channelId,
     required String name,
     String description = '',
+    String? category,
   }) async {
     try {
       if (!ByBugDB.isInitialized()) {
@@ -899,6 +901,7 @@ class ByBugChannel {
               'channel_id': channelId,
               'name': name,
               'description': description,
+              if (category != null) 'category': category,
             }),
           )
           .timeout(_kDefaultTimeout);
