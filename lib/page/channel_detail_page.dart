@@ -651,7 +651,9 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  widget.channel['name'] ?? 'Channel',
+                  (widget.channel['name'] as String?)?.isNotEmpty == true
+                      ? widget.channel['name']
+                      : 'Channel',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
@@ -726,8 +728,14 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
             Builder(builder: (context) {
               final pinnedPost =
                   _posts.firstWhere((p) => p['pinned'] == true);
-              final preview =
-                  (pinnedPost['content'] ?? '').toString().replaceAll('\n', ' ');
+              final pinnedType = pinnedPost['type'];
+              final preview = pinnedType == 'image'
+                  ? ((pinnedPost['caption'] ?? '').toString().isNotEmpty
+                      ? pinnedPost['caption'].toString()
+                      : '\ud83d\udcf7 Photo')
+                  : pinnedType == 'audio'
+                      ? '\ud83c\udfa4 Voice message'
+                      : (pinnedPost['content'] ?? '').toString().replaceAll('\n', ' ');
               return GestureDetector(
           onTap: () async {
           final pinnedIndex = _sortedPosts.indexWhere((p) => p['id'] == pinnedPost['id']);
