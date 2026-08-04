@@ -82,7 +82,9 @@ class _ChannelsPageState extends State<ChannelsPage> {
     final list = _channels.where((c) {
       final name = (c['name'] ?? '').toString().toLowerCase();
       final desc = (c['description'] ?? '').toString().toLowerCase();
-      return name.contains(_searchQuery) || desc.contains(_searchQuery);
+      final matchesSearch = name.contains(_searchQuery) || desc.contains(_searchQuery);
+      final matchesCategory = _filterCategory == 'All' || (c['category'] ?? 'General') == _filterCategory;
+      return matchesSearch && matchesCategory;
     }).toList();
     list.sort((a, b) {
       final aP = a['is_premium'] == true ? 1 : 0;
@@ -330,6 +332,39 @@ class _ChannelsPageState extends State<ChannelsPage> {
               ],
             ),
             const SizedBox(height: 10),
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: ['All', ...kChannelCategories.keys].map((cat) {
+                final selected = _filterCategory == cat;
+                final catColor = cat == 'All' ? Colors.green : kChannelCategories[cat]!;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _filterCategory = cat),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selected ? catColor : catColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: catColor, width: 1),
+                      ),
+                      child: Text(
+                        cat,
+                        style: TextStyle(
+                          color: selected ? Colors.white : catColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 14),
 
             // Search box
             TextField(
