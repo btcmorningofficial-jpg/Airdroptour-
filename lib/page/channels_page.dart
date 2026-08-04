@@ -5,6 +5,22 @@ import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/page/channel_detail_page.dart';
 import 'package:airdrop/page/home.dart';
 
+const Map<String, Color> kChannelCategories = {
+  'General': Color(0xFF9E9E9E),
+  'Coin': Color(0xFFFFD700),
+  'Token': Color(0xFF9C27B0),
+  'NFT': Color(0xFFEC4899),
+  'Memecoin': Color(0xFFFF9800),
+  'DeFi': Color(0xFF2196F3),
+  'GameFi': Color(0xFF4CAF50),
+  'Metaverse': Color(0xFF00BCD4),
+  'Layer 1': Color(0xFFF44336),
+  'Layer 2': Color(0xFF3F51B5),
+  'Stablecoin': Color(0xFF607D8B),
+  'DAO': Color(0xFFFFC107),
+  'AI': Color(0xFF009688),
+};
+
 class ChannelsPage extends StatefulWidget {
   const ChannelsPage({super.key});
 
@@ -22,6 +38,8 @@ class _ChannelsPageState extends State<ChannelsPage> {
   String? _uid;
   List<Map<String, dynamic>> _channels = [];
   String _searchQuery = '';
+  String _selectedCategory = 'General';
+  String _filterCategory = 'All';
 
   @override
   void initState() {
@@ -84,6 +102,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
     final result = await ByBugChannel.createChannel(
       name: _nameController.text.trim(),
       description: _descController.text.trim(),
+      category: _selectedCategory,
     );
 
     setState(() => _creating = false);
@@ -246,6 +265,34 @@ class _ChannelsPageState extends State<ChannelsPage> {
                       ),
                     ),
                   ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: kChannelCategories.keys.map((cat) {
+                    final selected = _selectedCategory == cat;
+                    final catColor = kChannelCategories[cat]!;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedCategory = cat),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: selected ? catColor : catColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: catColor, width: 1),
+                        ),
+                        child: Text(
+                          cat,
+                          style: TextStyle(
+                            color: selected ? Colors.white : catColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
                   if (_error != null) ...[
                     const SizedBox(height: 10),
                     Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
