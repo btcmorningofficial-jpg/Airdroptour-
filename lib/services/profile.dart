@@ -442,23 +442,23 @@ List<Map<String, dynamic>> fillToThreeCryptos(
 String _getDefaultImageForCoin(String name) {
   String lowerName = name.toLowerCase();
   if (lowerName.contains("bitcoin") || lowerName.contains("btc")) {
-    return "https://cryptologos.cc/logos/bitcoin-btc-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png";
   } else if (lowerName.contains("ethereum") || lowerName.contains("eth")) {
-    return "https://cryptologos.cc/logos/ethereum-eth-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png";
   } else if (lowerName.contains("bnb")) {
-    return "https://cryptologos.cc/logos/bnb-bnb-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/bnb.png";
   } else if (lowerName.contains("solana") || lowerName.contains("sol")) {
-    return "https://cryptologos.cc/logos/solana-sol-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/sol.png";
   } else if (lowerName.contains("cardano") || lowerName.contains("ada")) {
-    return "https://cryptologos.cc/logos/cardano-ada-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/ada.png";
   } else if (lowerName.contains("ripple") || lowerName.contains("xrp")) {
-    return "https://cryptologos.cc/logos/xrp-xrp-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/xrp.png";
   } else if (lowerName.contains("dogecoin") || lowerName.contains("doge")) {
-    return "https://cryptologos.cc/logos/dogecoin-doge-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/doge.png";
   } else if (lowerName.contains("polkadot") || lowerName.contains("dot")) {
-    return "https://cryptologos.cc/logos/polkadot-dot-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/dot.png";
   } else {
-    return "https://cryptologos.cc/logos/bitcoin-btc-logo.png";
+    return "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png";
   }
 }
 
@@ -466,17 +466,17 @@ String _getDefaultImageForCoin(String name) {
 List<Map<String, dynamic>> _getDefaultCryptos() {
   return [
     {
-      "image": "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+      "image": "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/btc.png",
       "name": "Bitcoin",
       "details": "The world's most popular cryptocurrency"
     },
     {
-      "image": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+      "image": "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/eth.png",
       "name": "Ethereum",
       "details": "Smart contract platform"
     },
     {
-      "image": "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+      "image": "https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/128/color/bnb.png",
       "name": "BNB",
       "details": "Binance Coin"
     }
