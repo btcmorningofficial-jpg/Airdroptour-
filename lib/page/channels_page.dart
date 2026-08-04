@@ -4,6 +4,7 @@ import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/page/channel_detail_page.dart';
 import 'package:airdrop/page/home.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const Map<String, Color> kChannelCategories = {
   'General': Color(0xFF9E9E9E),
@@ -135,6 +136,14 @@ class _ChannelsPageState extends State<ChannelsPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              leading: const Icon(Icons.workspace_premium, color: Colors.green),
+              title: const Text('Apply for Premium', style: TextStyle(color: Colors.green)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _applyForPremium(channel);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Delete Channel', style: TextStyle(color: Colors.red)),
               onTap: () {
@@ -146,6 +155,24 @@ class _ChannelsPageState extends State<ChannelsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _applyForPremium(Map<String, dynamic> channel) async {
+    final subject = Uri.encodeComponent('Premium Application - \${channel['name'] ?? ''}');
+    final body = Uri.encodeComponent(
+      'Channel name: \${channel['name'] ?? ''}\n'
+      'Channel ID: \${channel['id'] ?? ''}\n'
+      'Category: \${channel['category'] ?? 'General'}\n\n'
+      'Please review my channel for Premium status.',
+    );
+    final uri = Uri.parse('mailto:airdroptour@gmail.com?subject=\$subject&body=\$body');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open email app')),
+      );
+    }
   }
 
   Future<void> _confirmDeleteChannel(Map<String, dynamic> channel) async {
