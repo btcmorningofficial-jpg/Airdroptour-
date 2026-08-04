@@ -158,12 +158,12 @@ class _ChannelsPageState extends State<ChannelsPage> {
   }
 
   Future<void> _applyForPremium(Map<String, dynamic> channel) async {
-    final subject = Uri.encodeComponent('Premium Application - \${channel['name'] ?? ''}');
+    final subject = Uri.encodeComponent("Premium Application - ${channel['name'] ?? ''}");
     final body = Uri.encodeComponent(
-      'Channel name: \${channel['name'] ?? ''}\n'
-      'Channel ID: \${channel['id'] ?? ''}\n'
-      'Category: \${channel['category'] ?? 'General'}\n\n'
-      'Please review my channel for Premium status.',
+      "Channel name: ${channel['name'] ?? ''}\n"
+      "Channel ID: ${channel['id'] ?? ''}\n"
+      "Category: ${channel['category'] ?? 'General'}\n\n"
+      "Please review my channel for Premium status.",
     );
     final uri = Uri.parse('mailto:airdroptour@gmail.com?subject=\$subject&body=\$body');
     if (await canLaunchUrl(uri)) {
