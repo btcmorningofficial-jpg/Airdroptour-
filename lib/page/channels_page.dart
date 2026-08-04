@@ -1,4 +1,4 @@
-cimport 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/text.dart';
