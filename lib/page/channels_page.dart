@@ -466,6 +466,19 @@ class _ChannelsPageState extends State<ChannelsPage> {
                         style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (kChannelCategories[channel['category']] ?? kChannelCategories['General']!).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: kChannelCategories[channel['category']] ?? kChannelCategories['General']!, width: 1),
+                    ),
+                    child: Text(
+                      (channel['category'] ?? 'General').toString(),
+                      style: TextStyle(color: kChannelCategories[channel['category']] ?? kChannelCategories['General']!, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                                 if ((channel['description'] ?? '').toString().isNotEmpty) ...[
                                   const SizedBox(height: 2),
                                   Text(
