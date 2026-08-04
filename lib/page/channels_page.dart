@@ -61,11 +61,17 @@ class _ChannelsPageState extends State<ChannelsPage> {
 
   List<Map<String, dynamic>> get _filteredChannels {
     if (_searchQuery.isEmpty) return _channels;
-    return _channels.where((c) {
+    final list = _channels.where((c) {
       final name = (c['name'] ?? '').toString().toLowerCase();
       final desc = (c['description'] ?? '').toString().toLowerCase();
       return name.contains(_searchQuery) || desc.contains(_searchQuery);
     }).toList();
+    list.sort((a, b) {
+      final aP = a['is_premium'] == true ? 1 : 0;
+      final bP = b['is_premium'] == true ? 1 : 0;
+      return bP.compareTo(aP);
+    });
+    return list;
   }
 
   Future<void> _createChannel() async {
@@ -365,6 +371,19 @@ class _ChannelsPageState extends State<ChannelsPage> {
                     overflow: TextOverflow.ellipsis,
                                   style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
+                  if (channel['is_premium'] == true)
+                    Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'Premium',
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                                 if ((channel['description'] ?? '').toString().isNotEmpty) ...[
                                   const SizedBox(height: 2),
                                   Text(
