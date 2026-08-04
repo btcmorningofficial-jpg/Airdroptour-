@@ -361,6 +361,8 @@ class _ChannelsPageState extends State<ChannelsPage> {
                               children: [
                                 Text(
                                   channel['name']?.toString() ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                                   style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15),
                                 ),
                                 if ((channel['description'] ?? '').toString().isNotEmpty) ...[
