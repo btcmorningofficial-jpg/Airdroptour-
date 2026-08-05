@@ -917,6 +917,69 @@ class ByBugChannel {
     }
   }
 
+  static Future<List<dynamic>> updateChannelContract({
+    required String channelId,
+    required String contractAddress,
+  }) async {
+    try {
+      if (!ByBugDB.isInitialized()) {
+        return [0, 'API başlatılmamış!'];
+      }
+      final headers = await ByBugAuth._authHeaders();
+      final resp = await http
+          .post(
+            Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_update_contract.php'),
+            headers: headers,
+            body: jsonEncode({
+              'channel_id': channelId,
+              'contract_address': contractAddress,
+            }),
+          )
+          .timeout(_kDefaultTimeout);
+      final j = _safeDecode(resp);
+      if (j == null) return [0, 'Sunucudan geçersiz yanıt alındı'];
+      if (j['status'] == 1) return [1, j['channel']];
+      return [0, j['message'] ?? 'Failed to update contract'];
+    } on TimeoutException {
+      return [0, 'Sunucu yanıt vermedi (zaman aşımı)'];
+    } catch (e) {
+      debugPrint('ByBugChannel.updateChannelContract hatası: $e');
+      return [0, 'Sunucuya baglanilamadi'];
+    }
+  }
+
+  static Future<Map<String, dynamic>?> fetchTokenPrice(String contractAddress) async {
+    if (contractAddress.trim().isEmpty) return null;
+    try {
+      final resp = await http
+          .get(Uri.parse('https://api.dexscreener.com/latest/dex/tokens/$contractAddress'))
+          .timeout(const Duration(seconds: 10));
+      if (resp.statusCode != 200) return null;
+      final j = jsonDecode(resp.body);
+      final pairs = j['pairs'];
+      if (pairs == null || pairs is! List || pairs.isEmpty) return null;
+      Map<String, dynamic>? best;
+      double bestLiq = -1;
+      for (final p in pairs) {
+        final liq = double.tryParse((p['liquidity']?['usd'] ?? '0').toString()) ?? 0;
+        if (liq > bestLiq) {
+          bestLiq = liq;
+          best = Map<String, dynamic>.from(p);
+        }
+      }
+      if (best == null) return null;
+      return {
+        'priceUsd': best['priceUsd'],
+        'priceChange24h': best['priceChange']?['h24'],
+        'symbol': best['baseToken']?['symbol'],
+        'chainId': best['chainId'],
+      };
+    } catch (e) {
+      debugPrint('ByBugChannel.fetchTokenPrice hatası: $e');
+      return null;
+    }
+  }
+
   static Future<List<dynamic>> addAdmin({
     required String channelId,
     required String targetUid,

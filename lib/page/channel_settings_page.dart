@@ -14,12 +14,14 @@ class ChannelSettingsPage extends StatefulWidget {
 class _ChannelSettingsPageState extends State<ChannelSettingsPage> {
   late final _nameController = TextEditingController(text: widget.channel['name'] ?? '');
   late final _descController = TextEditingController(text: widget.channel['description'] ?? '');
+  late final _contractController = TextEditingController(text: widget.channel['contract_address'] ?? '');
   bool _saving = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _descController.dispose();
+    _contractController.dispose();
     super.dispose();
   }
 
@@ -38,6 +40,11 @@ class _ChannelSettingsPageState extends State<ChannelSettingsPage> {
       channelId: widget.channel['id'],
       name: name,
       description: _descController.text.trim(),
+    );
+
+    await ByBugChannel.updateChannelContract(
+      channelId: widget.channel['id'],
+      contractAddress: _contractController.text.trim(),
     );
 
     setState(() => _saving = false);
@@ -100,6 +107,20 @@ class _ChannelSettingsPageState extends State<ChannelSettingsPage> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: navColor,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Contract Address (opsiyonel)', style: TextStyle(color: Colors.white70)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _contractController,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: navColor,
+                hintText: '0x... veya token contract adresi',
+                hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
               ),
             ),
