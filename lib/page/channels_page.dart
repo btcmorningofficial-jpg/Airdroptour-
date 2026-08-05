@@ -79,11 +79,10 @@ class _ChannelsPageState extends State<ChannelsPage> {
   }
 
   List<Map<String, dynamic>> get _filteredChannels {
-    if (_searchQuery.isEmpty) return _channels;
     final list = _channels.where((c) {
       final name = (c['name'] ?? '').toString().toLowerCase();
       final desc = (c['description'] ?? '').toString().toLowerCase();
-      final matchesSearch = name.contains(_searchQuery) || desc.contains(_searchQuery);
+      final matchesSearch = _searchQuery.isEmpty || name.contains(_searchQuery) || desc.contains(_searchQuery);
       final matchesCategory = _filterCategory == 'All' || (c['category'] ?? 'General') == _filterCategory;
       return matchesSearch && matchesCategory;
     }).toList();
@@ -474,25 +473,23 @@ class _ChannelsPageState extends State<ChannelsPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  channel['name']?.toString() ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        channel['name']?.toString() ?? '',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15),
+                                      ),
+                                    ),
+                                    if (channel['is_premium'] == true) ...[
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.verified, color: Colors.blue, size: 16),
+                                    ],
+                                ],
                                 ),
-                  if (channel['is_premium'] == true)
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'Premium',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
                   Container(
                     margin: const EdgeInsets.only(top: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
