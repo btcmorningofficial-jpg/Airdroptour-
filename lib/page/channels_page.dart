@@ -164,7 +164,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
       "Category: ${channel['category'] ?? 'General'}\n\n"
       "Please review my channel for Premium status.",
     );
-    final uri = Uri.parse('mailto:airdroptour@gmail.com?subject=\$subject&body=\$body');
+    final uri = Uri.parse('mailto:airdroptour@gmail.com?subject=$subject&body=$body');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     } else if (mounted) {
