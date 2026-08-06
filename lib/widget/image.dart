@@ -10,7 +10,7 @@ String parseURL(String url) {
   if (url.contains("database.bybug.com.tr")) {
     String fileName = url.split("/")[url.split("/").length - 1];
 
-    return "https://database.bybug.com.tr:6620/publicFile/${ByBugDB.token}/$fileName";
+    return "https://appairdroptour.yurtdisiisilanlari.com.tr/publicFile/$fileName";
   } else {
     return url;
   }

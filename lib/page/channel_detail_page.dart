@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:airdrop/page/channel_invite_page.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'channel_info_page.dart';
 import 'package:record/record.dart';
@@ -8,8 +10,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:airdrop/theme/color.dart';
+import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/page/channel_settings_page.dart';
+import 'package:share_plus/share_plus.dart';
 
 Map<String, dynamic> _asReactionsMap(dynamic v) => (v is Map) ? Map<String, dynamic>.from(v) : <String, dynamic>{};
 
@@ -41,7 +45,10 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   final _player = AudioPlayer();
   bool _isRecording = false;
   bool _isUploadingVoice = false;
+  bool _isUploadingImage = false;
   String? _playingPostId;
+  final Map<String, GlobalKey> _postKeys = {};
+  final ScrollController _scrollController = ScrollController();
 
   bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
 
@@ -51,6 +58,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     if (!_isOwner) return;
     final path = await pickImage();
     if (path == null) return;
+    final caption = _postController.text.trim();
     final result = await ByBugChannel.updateAvatar(channelId: widget.channel['id'], filePath: path);
     if (result[0] == 1) {
       setState(() { _avatarUrl = result[1]['avatar_url']; });
@@ -59,11 +67,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     }
   }
 
-  List<Map<String, dynamic>> get _sortedPosts {
-    final pinned = _posts.where((p) => p['pinned'] == true).toList();
-    final rest = _posts.where((p) => p['pinned'] != true).toList();
-    return [...pinned, ...rest];
-  }
+  List<Map<String, dynamic>> get _sortedPosts => _posts;
 
   @override
   void initState() {
@@ -128,7 +132,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       await _loadMembers();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result[1]?.toString() ?? 'Islem basarisiz')),
+        SnackBar(content: Text(result[1]?.toString() ?? 'Action failed')),
       );
     }
   }
@@ -140,7 +144,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         child: SizedBox(
           height: 400,
           child: _members.isEmpty
-              ? const Center(child: Text('Henuz uye yok'))
+              ? const Center(child: Text('No members yet'))
               : ListView.builder(
                   itemCount: _members.length,
                   itemBuilder: (context, index) {
@@ -156,28 +160,44 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                         child: photo.isEmpty ? const Icon(Icons.person) : null,
                       ),
                       title: Text(name.isNotEmpty ? name : memberUid),
-                      subtitle: isAdmin ? const Text('Yonetici', style: TextStyle(color: Colors.amber, fontSize: 12)) : null,
+                      subtitle: isAdmin ? const Text('Admin', style: TextStyle(color: Colors.amber, fontSize: 12)) : null,
                       trailing: (_isOwner && memberUid != widget.currentUid)
-                          ? IconButton(
-                              icon: Icon(isAdmin ? Icons.remove_moderator : Icons.add_moderator),
-                              onPressed: () async {
-                                final result = isAdmin
-                                    ? await ByBugChannel.removeAdmin(channelId: widget.channel['id'], targetUid: memberUid)
-                                    : await ByBugChannel.addAdmin(channelId: widget.channel['id'], targetUid: memberUid);
-                                if (result[0] == 1) {
-                                  setState(() {
-                                    widget.channel['admin_ids'] = result[1]['admin_ids'];
-                                  });
-                                  if (mounted) Navigator.pop(context);
-                                  _showMembersList();
-                                } else if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(result[1]?.toString() ?? 'Islem basarisiz')),
-                                  );
-                                }
-                              },
-                            )
-                          : null,
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: _isUploadingImage ? null : _sendImage,
+                            icon: _isUploadingImage
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Icon(Icons.image_outlined, color: textColor),
+                          ),
+                          const SizedBox(width: 10),
+                          IconButton(
+                            icon: Icon(isAdmin ? Icons.remove_moderator : Icons.add_moderator),
+                            onPressed: () async {
+                              final result = isAdmin
+                                  ? await ByBugChannel.removeAdmin(channelId: widget.channel['id'], targetUid: memberUid)
+                                  : await ByBugChannel.addAdmin(channelId: widget.channel['id'], targetUid: memberUid);
+                              if (result[0] == 1) {
+                                setState(() {
+                                  widget.channel['admin_ids'] = result[1]['admin_ids'];
+                                });
+                                if (mounted) Navigator.pop(context);
+                                _showMembersList();
+                              } else if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(result[1]?.toString() ?? 'Action failed')),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      )
+                    : null,
                     );
                   },
                 ),
@@ -203,6 +223,73 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result[1]?.toString() ?? 'Failed to post')),
+      );
+    }
+  }
+
+  Future<void> _sendImage() async {
+    final path = await pickImage();
+    if (path == null) return;
+    final captionController = TextEditingController(text: _postController.text.trim());
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: bg,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.file(File(path), height: 240, fit: BoxFit.cover),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: captionController,
+                style: TextStyle(color: textColor),
+                maxLines: 3,
+                decoration: const InputDecoration(hintText: 'Add a caption...'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isUploadingImage = true);
+    final url = await ByBugStorage.uploadFile(path);
+    setState(() => _isUploadingImage = false);
+    final caption = captionController.text.trim();
+    if (url == null || url.startsWith('ERR:')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image could not be uploaded')),
+        );
+      }
+      return;
+    }
+    final result = await ByBugChannel.postToChannel(
+      channelId: widget.channel['id'],
+      content: url,
+      type: 'image',
+      caption: caption.isNotEmpty ? caption : null,
+    );
+    if (result[0] == 1) {
+      _postController.clear();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result[1]?.toString() ?? 'Post could not be shared')),
       );
     }
   }
@@ -409,7 +496,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
           children: [
             ListTile(
               leading: Icon(post['pinned'] == true ? Icons.push_pin_outlined : Icons.push_pin),
-              title: Text(post['pinned'] == true ? 'Sabitlemeyi kaldir' : 'Sabitle'),
+              title: Text(post['pinned'] == true ? 'Unpin' : 'Pin'),
               onTap: () {
                 Navigator.pop(ctx);
                 _togglePin(post);
@@ -467,7 +554,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Message'),
-        content: const Text('Bu mesaji silmek istediginize emin misiniz?'),
+        content: const Text('Are you sure you want to delete this message?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
@@ -487,11 +574,13 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   }
 
   Future<void> _editPost(Map<String, dynamic> post) async {
-    final controller = TextEditingController(text: post['content']?.toString() ?? '');
+    final isImage = post['type'] == 'image';
+    final fieldKey = isImage ? 'caption' : 'content';
+    final controller = TextEditingController(text: post[fieldKey]?.toString() ?? '');
     final newText = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Mesaji duzenle'),
+        title: const Text('Edit message'),
         content: TextField(controller: controller, maxLines: 5, autofocus: true),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
@@ -499,19 +588,28 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         ],
       ),
     );
-    if (newText == null || newText.isEmpty) return;
+    if (newText == null) return;
+    if (!isImage && newText.isEmpty) return;
 
     final channelId = widget.channel['id'];
     final bucket = 'channel_posts:$channelId';
     final postId = post['id'].toString();
     final updated = Map<String, dynamic>.from(post);
-    updated['content'] = newText;
+    updated[fieldKey] = newText;
     await ByBugDatabase.update(bucket, postId, updated);
 
     setState(() {
       final idx = _posts.indexWhere((p) => p['id'].toString() == postId);
-      if (idx != -1) _posts[idx]['content'] = newText;
+      if (idx != -1) _posts[idx][fieldKey] = newText;
     });
+  }
+
+  Future<void> _shareInviteLink() async {
+    final channelId = widget.channel['id'];
+    final channelName = widget.channel['name'] ?? 'this channel';
+    final link =
+        'https://go.btcmorning.com/join.php?c=$channelId&u=${widget.currentUid}';
+    await Share.share('Join "$channelName" on Airdroptour!\n$link');
   }
 
   @override
@@ -519,6 +617,11 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        titleSpacing: 0,
         backgroundColor: bg,
         title: Row(children: [
           GestureDetector(
@@ -548,7 +651,9 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  widget.channel['name'] ?? 'Channel',
+                  (widget.channel['name'] as String?)?.isNotEmpty == true
+                      ? widget.channel['name']
+                      : 'Channel',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
@@ -564,12 +669,33 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
         ]),
             actions: [
               TextButton(
+        style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
                 onPressed: _toggleSubscription,
                 child: Text(
                   _isSubscribed ? 'Leave' : 'Join',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
+      IconButton(
+        icon: const Icon(Icons.person_add_alt, color: Colors.white),
+        tooltip: 'Invite',
+        onPressed: _shareInviteLink,
+      ),
+    IconButton(
+      icon: const Icon(Icons.group_add, color: Colors.white),
+      tooltip: 'Invite Members',
+      onPressed: () async {
+        final sent = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChannelInvitePage(channelId: widget.channel['id']),
+          ),
+        );
+        if (sent == true && mounted) {
+          _loadMembers();
+        }
+      },
+    ),
           if (_isOwner)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -598,17 +724,99 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       ),
       body: Column(
         children: [
+          if ((widget.channel['contract_address'] ?? '').toString().isNotEmpty)
+            _PriceCard(contractAddress: (widget.channel['contract_address'] ?? '').toString()),
+          if (_posts.any((p) => p['pinned'] == true))
+            Builder(builder: (context) {
+              final pinnedPost =
+                  _posts.firstWhere((p) => p['pinned'] == true);
+              final pinnedType = pinnedPost['type'];
+              final preview = pinnedType == 'image'
+                  ? ((pinnedPost['caption'] ?? '').toString().isNotEmpty
+                      ? pinnedPost['caption'].toString()
+                      : '\ud83d\udcf7 Photo')
+                  : pinnedType == 'audio'
+                      ? '\ud83c\udfa4 Voice message'
+                      : (pinnedPost['content'] ?? '').toString().replaceAll('\n', ' ');
+              return GestureDetector(
+          onTap: () async {
+          final pinnedIndex = _sortedPosts.indexWhere((p) => p['id'] == pinnedPost['id']);
+          void tryScroll() {
+            final key = _postKeys[pinnedPost['id'].toString()];
+            final targetContext = key?.currentContext;
+            if (targetContext != null) {
+              Scrollable.ensureVisible(
+                targetContext,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+                alignment: 0.5,
+              );
+            }
+          }
+          final key = _postKeys[pinnedPost['id'].toString()];
+          if (key?.currentContext == null && pinnedIndex != -1 && _scrollController.hasClients) {
+            final estimatedOffset = pinnedIndex * 120.0;
+            await _scrollController.animateTo(
+              estimatedOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+            await Future.delayed(const Duration(milliseconds: 100));
+          }
+          tryScroll();
+        },
+          child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                color: navColor,
+                child: Row(
+                  children: [
+                    const Icon(Icons.push_pin, size: 16, color: Colors.amber),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Pinned Message',
+                            style: TextStyle(
+                              color: Colors.amber,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            preview.isNotEmpty ? preview : 'Voice message',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: textColor, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+        );
+            }),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _posts.isEmpty
                     ? const Center(child: Text('No posts yet'))
                     : ListView.builder(
-                        padding: const EdgeInsets.all(12),
+                        controller: _scrollController,
+                padding: const EdgeInsets.all(12),
                         itemCount: _sortedPosts.length,
                         itemBuilder: (context, index) {
                           final post = _sortedPosts[index];
+          final postKey = _postKeys.putIfAbsent(
+            post['id'].toString(),
+            () => GlobalKey(),
+          );
                           return GestureDetector(
+            key: postKey,
                             onLongPress:
                                 _isOwner ? () => _showPostMenu(post) : null,
                             child: Container(
@@ -618,40 +826,61 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                               color: navColor,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                post['type'] == 'audio'
-                                ? Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        onPressed: () => _togglePlay(
-                                          post['id'].toString(),
-                                          post['content']?.toString() ?? '',
-                                        ),
-                                        icon: Icon(
-                                          _playingPostId ==
-                                                  post['id'].toString()
-                                              ? Icons.stop_circle
-                                              : Icons.play_circle,
-                                          color: textColor,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Voice message',
-                                        style: TextStyle(color: textColor),
-                                      ),
-                                    ],
-                                  )
-                                : Text(
-                                    post['content']?.toString() ?? '',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        post['type'] == 'audio'
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    onPressed: () => _togglePlay(
+                                      post['id'].toString(),
+                                      post['content']?.toString() ?? '',
+                                    ),
+                                    icon: Icon(
+                                      _playingPostId ==
+                                              post['id'].toString()
+                                          ? Icons.stop_circle
+                                          : Icons.play_circle,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Voice message',
                                     style: TextStyle(color: textColor),
                                   ),
-                                _buildReactions(post),
-                              ],
-                            ),
+                                ],
+                              )
+                            : post['type'] == 'image'
+                    ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: AirdroptourImage(
+                        post['content']?.toString() ?? '',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    if ((post['caption'] ?? '').toString().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        post['caption'].toString(),
+                        style: TextStyle(color: textColor, height: 1.35),
+                      ),
+                    ],
+                  ],
+                )
+                    : Text(
+                                post['content']?.toString() ?? '',
+                                style: TextStyle(color: textColor, height: 1.35),
+                              ),
+                        const SizedBox(height: 8),
+                        _buildReactions(post),
+                      ],
+                    ),
                   ),
                           );
                         },
@@ -676,6 +905,17 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                       ),
                     ),
                   ),
+              const SizedBox(width: 10),
+              IconButton(
+                onPressed: _isUploadingImage ? null : _sendImage,
+                icon: _isUploadingImage
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(Icons.image_outlined, color: textColor),
+              ),
                   const SizedBox(width: 10),
                   IconButton(
                     onPressed: _isUploadingVoice
@@ -710,6 +950,95 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _PriceCard extends StatefulWidget {
+  final String contractAddress;
+  const _PriceCard({required this.contractAddress});
+
+  @override
+  State<_PriceCard> createState() => _PriceCardState();
+}
+
+class _PriceCardState extends State<_PriceCard> {
+  Map<String, dynamic>? _priceData;
+  Timer? _priceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrice();
+    _priceTimer = Timer.periodic(const Duration(seconds: 20), (_) => _loadPrice());
+  }
+
+  @override
+  void dispose() {
+    _priceTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadPrice() async {
+    if (widget.contractAddress.isEmpty) return;
+    final data = await ByBugChannel.fetchTokenPrice(widget.contractAddress);
+    if (mounted && data != null) {
+      setState(() => _priceData = data);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: navColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: _priceData == null
+          ? Row(
+              children: [
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                const Text('Loading price...', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            )
+          : Row(
+              children: [
+                if ((_priceData!['imageUrl'] ?? '').toString().isNotEmpty) ...[
+                  ClipOval(
+                    child: Image.network(
+                      _priceData!['imageUrl'].toString(),
+                      width: 18,
+                      height: 18,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.currency_bitcoin, color: Colors.white70, size: 18),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ] else ...[
+                  const Icon(Icons.currency_bitcoin, color: Colors.white70, size: 18),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  "${_priceData!['symbol'] ?? ''} \$${_priceData!['priceUsd'] ?? '-'}",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(width: 8),
+                Builder(builder: (context) {
+                  final change = double.tryParse((_priceData!['priceChange24h'] ?? '0').toString()) ?? 0;
+                  final isUp = change >= 0;
+                  return Text(
+                    "${isUp ? '+' : ''}${change.toStringAsFixed(2)}%",
+                    style: TextStyle(color: isUp ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                  );
+                }),
+              ],
+            ),
     );
   }
 }

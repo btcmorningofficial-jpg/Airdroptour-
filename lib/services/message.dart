@@ -115,11 +115,14 @@ class MessageServices extends ChangeNotifier {
   }
 
   static Future<void> removeChatMessages(String chatID) async {
-    var allMessages = await ByBugDatabase.getAll("message");
+    var allMessages = await ByBugDatabase.getFiltered(
+      "message",
+      "chat_id",
+      chatID,
+      limit: 500,
+    );
     for (var element in allMessages) {
-      if (element["value"]["chat_id"] == chatID) {
-        await ByBugDatabase.remove("message", element["tag"]);
-      }
+      await ByBugDatabase.remove("message", element["tag"]);
     }
     messages.value.clear();
     messages.notifyListeners();
@@ -139,10 +142,13 @@ class MessageServices extends ChangeNotifier {
     chatInPhoto.value = userData["value"]["photo"];
     chatInChatID.value = chatID;
     chatInCreateAT.value = DateTime.parse(chats["value"]["create_at"]);
-    var message = await ByBugDatabase.getAll("message");
+    var message = await ByBugDatabase.getFiltered(
+      "message",
+      "chat_id",
+      chatID,
+    );
     messages.value.clear();
     for (var element in message) {
-      var value = element["value"];
       messages.value.add(
         MessageBlock(tag: element["tag"], value: element["value"]),
       );
@@ -161,6 +167,7 @@ class MessageServices extends ChangeNotifier {
   ) {
     ByBugDatabase.listenAll(
       "message",
+      pollKey: "message_$chatID",
       onAdd: (tag, id, value) {
         if (value["chat_id"] == chatID) {
           onMessage(tag, value);
@@ -262,7 +269,7 @@ class _MessageBlockState extends State<MessageBlock> {
                 ),
               ),
               child: Text(
-                '\$emoji \${users.length}',
+                '$emoji ${users.length}',
                 style: const TextStyle(color: Colors.white, fontSize: 11),
               ),
             ),
@@ -271,6 +278,7 @@ class _MessageBlockState extends State<MessageBlock> {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -286,35 +294,49 @@ class _MessageBlockState extends State<MessageBlock> {
                 "Delete Message",
                 textColor: textColor,
                 onTap: () async {
-                    await MessageServices.removeChatMessages(widget.value["chat_id"]);
+                  await MessageServices.removeChatMessages(widget.value["chat_id"]);
                   visible.value = false;
                   visible.notifyListeners();
                 },
               ),
+              CosmosMenu.item(
+                "React",
+                textColor: textColor,
+                onTap: () async {
+                  await _showReactionPicker();
+                },
+              ),
             ],
-            child: ChatBubble(
-              clipper: ChatBubbleClipper3(
-                type: widget.value["uid"] == MyProfileData.uid()
-                    ? BubbleType.sendBubble
-                    : BubbleType.receiverBubble,
-              ),
-              alignment: widget.value["uid"] == MyProfileData.uid()
-                  ? Alignment.topRight
-                  : null,
-              margin: EdgeInsets.only(top: 20),
-              backGroundColor: widget.value["uid"] == MyProfileData.uid()
-                  ? defaultColor
-                  : cColor,
-              child: Container(
-                constraints: BoxConstraints(
-                  // ignore: use_build_context_synchronously
-                  maxWidth: MediaQuery.of(context).size.width * 0.7,
+            child: Column(
+              crossAxisAlignment: widget.value["uid"] == MyProfileData.uid()
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                ChatBubble(
+                  clipper: ChatBubbleClipper3(
+                    type: widget.value["uid"] == MyProfileData.uid()
+                        ? BubbleType.sendBubble
+                        : BubbleType.receiverBubble,
+                  ),
+                  alignment: widget.value["uid"] == MyProfileData.uid()
+                      ? Alignment.topRight
+                      : null,
+                  margin: EdgeInsets.only(top: 20),
+                  backGroundColor: widget.value["uid"] == MyProfileData.uid()
+                      ? defaultColor
+                      : cColor,
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.7,
+                    ),
+                    child: Text(
+                      widget.value["text"],
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ),
-                child: Text(
-                  widget.value["text"],
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
+                _buildReactions(),
+              ],
             ),
           ),
         );

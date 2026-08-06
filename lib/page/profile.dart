@@ -3,8 +3,10 @@ import 'package:airdrop/page/add_rain.dart';
 import 'package:airdrop/page/admin/admin.dart';
 import 'package:airdrop/page/contact.dart';
 import 'package:airdrop/page/edit.dart';
+import 'package:airdrop/page/home.dart';
 import 'package:airdrop/page/login.dart';
 import 'package:airdrop/services/admin.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:airdrop/services/post.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
@@ -41,521 +43,668 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    MyProfileData.getMyProfile();
-    for (var element in MyProfileData.cripto()) {
-      if (AdminServices.cryptosNames.contains(element["image"])) {
+    Future.delayed(Duration.zero, _loadProfileCrypto);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  // 🔥 ANA FONKSİYON: Crypto'ları yükle ve göster
+  Future<void> _loadProfileCrypto() async {
+    try {
+      await MyProfileData.getMyProfile();
+      if (!mounted) return;
+
+      var cryptoPoolRaw = await ByBugDatabase.getAll("crypto");
+      List<Map<String, dynamic>> cryptoPool = [];
+      for (var element in cryptoPoolRaw) {
+        Map<String, dynamic> val = Map<String, dynamic>.from(
+          element["value"] ?? {},
+        );
+        if ((val["name"] ?? "").toString().isEmpty) continue;
+        if ((val["image"] ?? "").toString().isEmpty) continue;
+        cryptoPool.add(val);
+      }
+
+      var finalCryptos = fillToThreeCryptos(
+        MyProfileData.cripto(),
+        cryptoPool,
+      );
+
+      profileCrypto.value.clear();
+
+      for (var element in finalCryptos) {
         profileCrypto.value.add(
-          CryptoWidget(
-            id: "id",
-            photo: element["image"],
-            name: element["name"],
-            details: element["details"],
+          GestureDetector(
+            onTap: () {
+              _showCryptoDetail(context, element);
+            },
+            // 🔥 BURASI ÇOK ÖNEMLİ: Uzun basınca favoriden çıkarma
+            onLongPress: () {
+              _showRemoveFavoriteDialog(context, element);
+            },
+            child: Container(
+              width: 70,
+              height: 70,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: (element["image"] ?? "").toString().isNotEmpty
+                    ? Colors.transparent
+                    : Colors.orange,
+                borderRadius: BorderRadius.circular(35),
+              ),
+              alignment: Alignment.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(35),
+                child: (element["image"] ?? "").toString().isNotEmpty
+                    ? AirdroptourImage(
+                        (element["image"]).toString(),
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.contain,
+                      )
+                    : Text(
+                        (element["name"] ?? "?").toString(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+              ),
+            ),
           ),
         );
       }
+
+      profileCrypto.notifyListeners();
+      debugPrint("DEBUG profil cripto sayisi: ${MyProfileData.cripto().length}");
+
+      var socialData = MyProfileData.social();
+      social.clear();
+      for (var element in socialData.keys) {
+        Map<String, dynamic> value = socialData[element];
+        social.add([value["name"], value["url"]]);
+        socialText.add(value["name"]);
+      }
+
+      Post.getProfilePosts(MyProfileData.uid());
+    } catch (e) {
+      debugPrint("❌ _loadProfileCrypto hatası: $e");
+      profileCrypto.value.clear();
+      profileCrypto.notifyListeners();
     }
-    profileCrypto.notifyListeners();
-    var socialData = MyProfileData.social();
-    social.clear();
-    for (var element in socialData.keys) {
-      Map<String, dynamic> value = socialData[element];
-      social.add([value["name"], value["url"]]);
-      socialText.add(value["name"]);
+  }
+
+  // 🔥 YENİ: Crypto detay göster
+  void _showCryptoDetail(BuildContext context, Map<String, dynamic> element) {
+    try {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.black,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (context) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ClipOval(
+                      child: (element["image"] ?? "").toString().isNotEmpty
+                          ? AirdroptourImage(
+                              (element["image"]).toString(),
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(
+                              width: 40,
+                              height: 40,
+                              color: Colors.orange,
+                              alignment: Alignment.center,
+                              child: Text(
+                                (element["name"] ?? "?").toString(),
+                                style: const TextStyle(
+                                    fontSize: 10, color: Colors.black),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: h3((element["name"] ?? "").toString()),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                subP((element["details"] ?? "").toString()),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: CryptoWidget.exchangeLinks.entries.map((entry) {
+                    return GestureDetector(
+                      onTap: () async {
+                        final uri = Uri.tryParse(entry.value);
+                        if (uri != null) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: defaultColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: h5(entry.key),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      debugPrint("⚠️ Crypto detay gösterilemedi: $e");
     }
-    Post.getProfilePosts(MyProfileData.uid());
+  }
+
+  // 🔥 YENİ: Favori coin silme dialog'u
+  void _showRemoveFavoriteDialog(
+      BuildContext context, Map<String, dynamic> coin) {
+    String coinName = coin["name"]?.toString() ?? "Bu coin";
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: navColor,
+        title: Text("Remove from Favorites", style: TextStyle(color: textColor)),
+        content: Text(
+          "Are you sure you want to remove $coinName from favorites?",
+          style: TextStyle(color: textColor.withOpacity(0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("Cancel", style: TextStyle(color: textColor)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _removeFavoriteCoin(coinName);
+            },
+            child: Text(
+              "Remove",
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔥 YENİ: Favori coin silme işlemi
+  Future<void> _removeFavoriteCoin(String coinName) async {
+    try {
+      List currentFavorites = MyProfileData.cripto();
+      if (currentFavorites == null) currentFavorites = [];
+
+      currentFavorites.removeWhere((element) {
+        if (element is Map) {
+          return element["name"] == coinName;
+        }
+        return false;
+      });
+
+      await MyProfileData.setProfile(
+        cripto: currentFavorites,
+      );
+
+      await _loadProfileCrypto();
+
+      if (mounted) {
+        getSuccessSnack(context, "$coinName favorilerden çıkarıldı");
+      }
+    } catch (e) {
+      debugPrint("❌ Favori coin silme hatası: $e");
+      if (mounted) {
+        getErrorSnack(context, "Coin çıkarılamadı: $e");
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SizerResponsive(
-      child: Scaffold(
-        backgroundColor: bg,
-        body: BottomPage(
-          page: 4,
-          child: ListenableBuilder(
-            listenable: Listenable.merge([
-              bioLong,
-              MyProfileData.data,
-              profileCrypto,
-              profilePosts,
-            ]),
-            builder: (context, child) {
-              return SafeArea(
-                child: SingleChildScrollView(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(10),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 5,
-                                    height: 25,
-                                    decoration: BoxDecoration(
-                                      color: defaultColor,
-                                      borderRadius: BorderRadius.circular(1020),
-                                    ),
-                                  ),
-                                  SizedBox(width: 4),
-                                  h1("My Profile"),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              child: Row(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadiusGeometry.only(
-                                      topLeft: Radius.circular(8),
-                                      bottomRight: Radius.circular(8),
-                                    ),
-                                    child: AirdroptourImage(
-                                      MyProfileData.photo().startsWith("http")
-                                          ? MyProfileData.photo()
-                                          : "assets/img/user.png",
-                                      width: 80,
-                                      height: 80,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Visibility(
-                                              visible: MyProfileData.premium(),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.verified,
-                                                    color: textColor,
-                                                    size: 18,
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                ],
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: h3(
-                                                MyProfileData.name(),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.person,
-                                              color: textColor,
-                                              size: 12,
-                                            ),
-                                            Expanded(
-                                              child: subP(
-                                                MyProfileData.isAdmin()
-                                                    ? "Admin/Developer Account"
-                                                    : "User Account",
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Column(
-                                    children: [
-                                      h3(
-                                        profilePosts.value.length.toString(),
-                                        color: defaultColor,
-                                      ),
-                                      subP(
-                                        "Post",
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 10,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  IntrinsicWidth(
-                                    child: GestureDetector(
-                                      onTap: () async {
-                                        await SelectDialog.showModal<String>(
-                                          context,
-                                          searchHint:
-                                              "Search in Social Media...",
-                                          label: "Social Media",
-                                          backgroundColor: navColor,
-                                          constraints: BoxConstraints(
-                                            maxWidth: width(context) * 0.5,
-                                          ),
-                                          items: socialText,
-                                          onChange: (p0) async {
-                                            for (var element in social) {
-                                              if (element[0] == p0) {
-                                                await openUrl(element[1]);
-                                                break;
-                                              }
-                                            }
-                                          },
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            1020,
-                                          ),
-                                          color: defaultColor,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            AirdroptourImage(
-                                              "assets/icon/Star Animation.gif",
-                                              width: 16,
-                                              height: 16,
-                                            ),
-                                            SizedBox(width: 4),
-                                            Expanded(
-                                              child: subP(
-                                                "Social Media",
-                                                textAlign: TextAlign.left,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 6),
-                                  GestureDetector(
-                                    onTap: () {
-                                      bioLong.value = !bioLong.value;
-                                      bioLong.notifyListeners();
-                                    },
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: p(
-                                            MyProfileData.bio(),
-                                            textAlign: TextAlign.left,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Visibility(
-                                    visible: MyProfileData.bio().length > 100,
-                                    child: Opacity(
-                                      opacity: 0.5,
-                                      child: subP(
-                                        bioLong.value
-                                            ? "Make the text smaller."
-                                            : "Read more",
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                push(context, EditPage());
-                              },
-                              child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 10),
-                                padding: EdgeInsets.all(10),
-                                width: widthSizer(context),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [bg, navColor],
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
+    // 🔥 BURASI ÇOK ÖNEMLİ: Geri tuşu HOME'a yönlendir (Login'e değil!)
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage()),
+        );
+        return false;
+      },
+      child: SizerResponsive(
+        child: Scaffold(
+          backgroundColor: bg,
+          body: BottomPage(
+            page: 4,
+            child: ListenableBuilder(
+              listenable: Listenable.merge([
+                bioLong,
+                MyProfileData.data,
+                profileCrypto,
+                profilePosts,
+              ]),
+              builder: (context, child) {
+                return SafeArea(
+                  child: SingleChildScrollView(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              // 🟢 PROFİL BAŞLIĞI
+                              Padding(
+                                padding: const EdgeInsets.all(10),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    p("Edit Profile"),
-                                    Spacer(),
-                                    Icon(
-                                      Icons.settings_outlined,
-                                      color: textColor,
-                                      size: 15,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () {
-                                push(context, Contact());
-                              },
-                              child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 10),
-                                padding: EdgeInsets.all(10),
-                                width: widthSizer(context),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [bg, navColor],
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    p("Contact Us"),
-                                    Spacer(),
-                                    Icon(
-                                      Icons.radar_outlined,
-                                      color: textColor,
-                                      size: 15,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Visibility(
-                              visible: MyProfileData.isAdmin(),
-                              child: Column(
-                                children: [
-                                  SizedBox(height: 4),
-                                  GestureDetector(
-                                    onTap: () {
-                                      push(context, AdminPanel());
-                                    },
-                                    child: Container(
-                                      margin: EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                      ),
-                                      padding: EdgeInsets.all(10),
-                                      width: widthSizer(context),
+                                    Container(
+                                      width: 5,
+                                      height: 25,
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [bg, navColor],
-                                        ),
-                                        borderRadius: BorderRadius.circular(10),
+                                        color: defaultColor,
+                                        borderRadius:
+                                            BorderRadius.circular(1020),
                                       ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
+                                    ),
+                                    SizedBox(width: 4),
+                                    h1("My Profile"),
+                                  ],
+                                ),
+                              ),
+
+                              // 🟢 PROFİL RESİM + İSİM + POST SAYISI
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadiusGeometry.only(
+                                        topLeft: Radius.circular(8),
+                                        bottomRight: Radius.circular(8),
+                                      ),
+                                      child: AirdroptourImage(
+                                        MyProfileData.photo().startsWith("http")
+                                            ? MyProfileData.photo()
+                                            : "assets/img/user.png",
+                                        width: 80,
+                                        height: 80,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          p("Administration Panel"),
-                                          Spacer(),
-                                          Icon(
-                                            Icons.admin_panel_settings,
-                                            color: textColor,
-                                            size: 15,
+                                          Row(
+                                            children: [
+                                              Visibility(
+                                                visible:
+                                                    MyProfileData.premium(),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.verified,
+                                                      color: textColor,
+                                                      size: 18,
+                                                    ),
+                                                    SizedBox(width: 4),
+                                                  ],
+                                                ),
+                                              ),
+                                              Expanded(
+                                                child: h3(
+                                                  MyProfileData.name(),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.person,
+                                                color: textColor,
+                                                size: 12,
+                                              ),
+                                              Expanded(
+                                                child: subP(
+                                                  MyProfileData.isAdmin()
+                                                      ? "Admin/Developer Account"
+                                                      : "User Account",
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () {
-                                addPost(context);
-                              },
-                              child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 10),
-                                padding: EdgeInsets.all(10),
-                                width: widthSizer(context),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [bg, navColor],
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    p("Create New Post"),
-                                    Spacer(),
-                                    Icon(
-                                      Icons.add_box_outlined,
-                                      color: textColor,
-                                      size: 15,
+                                    SizedBox(width: 10),
+                                    Column(
+                                      children: [
+                                        h3(
+                                          profilePosts.value.length.toString(),
+                                          color: defaultColor,
+                                        ),
+                                        subP(
+                                          "Post",
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () async {
-                                await ByBugAuth.logout();
-                                if (!context.mounted) return;
-                                push(context, LoginPage());
-                              },
-                              child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 10),
-                                padding: EdgeInsets.all(10),
-                                width: widthSizer(context),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [bg, Colors.red],
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
+
+                              // 🟢 BİO + SOSYAL MEDYA
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 10,
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    p("Sign Out"),
-                                    Spacer(),
-                                    Icon(
-                                      Icons.logout,
-                                      color: textColor,
-                                      size: 15,
+                                    IntrinsicWidth(
+                                      child: GestureDetector(
+                                        onTap: () async {
+                                          await SelectDialog.showModal<String>(
+                                            context,
+                                            searchHint:
+                                                "Search in Social Media...",
+                                            label: "Social Media",
+                                            backgroundColor: navColor,
+                                            constraints: BoxConstraints(
+                                              maxWidth: width(context) * 0.5,
+                                            ),
+                                            items: socialText,
+                                            onChange: (p0) async {
+                                              for (var element in social) {
+                                                if (element[0] == p0) {
+                                                  await openUrl(element[1]);
+                                                  break;
+                                                }
+                                              }
+                                            },
+                                          );
+                                        },
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              1020,
+                                            ),
+                                            color: defaultColor,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              AirdroptourImage(
+                                                "assets/icon/Star Animation.gif",
+                                                width: 16,
+                                                height: 16,
+                                              ),
+                                              SizedBox(width: 4),
+                                              Expanded(
+                                                child: subP(
+                                                  "Social Media",
+                                                  textAlign: TextAlign.left,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: 6),
+                                    GestureDetector(
+                                      onTap: () {
+                                        bioLong.value = !bioLong.value;
+                                        bioLong.notifyListeners();
+                                      },
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: p(
+                                              MyProfileData.bio(),
+                                              textAlign: TextAlign.left,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Visibility(
+                                      visible: MyProfileData.bio().length > 100,
+                                      child: Opacity(
+                                        opacity: 0.5,
+                                        child: subP(
+                                          bioLong.value
+                                              ? "Make the text smaller."
+                                              : "Read more",
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () async {
-                                final confirm1 = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    backgroundColor: navColor,
-                                    title: bold("Delete Account"),
-                                    content: p(
-                                      "This will permanently delete your account, profile, and login credentials. This action cannot be undone.",
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: p("Cancel"),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: bold("Continue"),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm1 != true) return;
-                                if (!context.mounted) return;
 
-                                final confirm2 = await showDialog<bool>(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    backgroundColor: navColor,
-                                    title: bold("Are you absolutely sure?"),
-                                    content: p(
-                                      "Last chance to cancel. Your account will be gone forever.",
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, false),
-                                        child: p("Cancel"),
-                                      ),
-                                      TextButton(
-                                        onPressed: () =>
-                                            Navigator.pop(ctx, true),
-                                        child: bold("Delete Forever"),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                if (confirm2 != true) return;
-
-                                var x = await ByBugAuth.deleteSelf();
-                                if (x[0] == 1) {
+                              // 🟢 BUTONLAR
+                              _buildMenuItem(
+                                icon: Icons.settings_outlined,
+                                title: "Edit Profile",
+                                onTap: () => push(context, EditPage()),
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.radar_outlined,
+                                title: "Contact Us",
+                                onTap: () => push(context, Contact()),
+                              ),
+                              if (MyProfileData.isAdmin())
+                                _buildMenuItem(
+                                  icon: Icons.admin_panel_settings,
+                                  title: "Administration Panel",
+                                  onTap: () => push(context, AdminPanel()),
+                                ),
+                              _buildMenuItem(
+                                icon: Icons.add_box_outlined,
+                                title: "Create New Post",
+                                onTap: () => addPost(context),
+                              ),
+                              _buildMenuItem(
+                                icon: Icons.logout,
+                                title: "Sign Out",
+                                color: Colors.red,
+                                onTap: () async {
                                   await ByBugAuth.logout();
                                   if (!context.mounted) return;
                                   push(context, LoginPage());
-                                } else {
-                                  if (context.mounted) {
-                                    getErrorSnack(context, x[1]);
-                                  }
-                                }
-                              },
-                              child: Container(
-                                margin: EdgeInsets.symmetric(horizontal: 10),
-                                padding: EdgeInsets.all(10),
-                                width: widthSizer(context),
-                                decoration: BoxDecoration(
-                                  color: Colors.transparent,
-                                  border: Border.all(
-                                    color: Colors.red.withOpacity(0.5),
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "Delete My Account",
-                                      style: TextStyle(
-                                        color: Colors.red.withOpacity(0.8),
-                                      ),
-                                    ),
-                                    Spacer(),
-                                    Icon(
-                                      Icons.delete_forever,
-                                      color: Colors.red.withOpacity(0.8),
-                                      size: 15,
-                                    ),
-                                  ],
-                                ),
+                                },
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: h3("•", color: textColor.withOpacity(0.5)),
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: AutoScrollCryptoRow(
-                                    children: profileCrypto.value,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Column(children: profilePosts.value), const SizedBox(height: 100),
-                          ],
+                              _buildMenuItem(
+                                icon: Icons.delete_forever,
+                                title: "Delete My Account",
+                                color: Colors.red,
+                                isDelete: true,
+                                onTap: () async {
+                                  // Delete Account işlemi
+                                  final confirm1 = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      backgroundColor: navColor,
+                                      title: bold("Delete Account"),
+                                      content: p(
+                                        "This will permanently delete your account, profile, and login credentials. This action cannot be undone.",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, false),
+                                          child: p("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, true),
+                                          child: bold("Continue"),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm1 != true) return;
+                                  if (!context.mounted) return;
+
+                                  final confirm2 = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      backgroundColor: navColor,
+                                      title: bold("Are you absolutely sure?"),
+                                      content: p(
+                                        "Last chance to cancel. Your account will be gone forever.",
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, false),
+                                          child: p("Cancel"),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(ctx, true),
+                                          child: bold("Delete Forever"),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  if (confirm2 != true) return;
+
+                                  var x = await ByBugAuth.deleteSelf();
+                                  if (x[0] == 1) {
+                                    await ByBugAuth.logout();
+                                    if (!context.mounted) return;
+                                    push(context, LoginPage());
+                                  } else {
+                                    if (context.mounted) {
+                                      getErrorSnack(context, x[1]);
+                                    }
+                                  }
+                                },
+                              ),
+
+                              // 🟢 CRYPTO ROW
+                              ValueListenableBuilder<List<Widget>>(
+                                valueListenable: profileCrypto,
+                                builder: (context, cryptoChildren, _) {
+                                  return SizedBox(
+                                    width: widthSizer(context),
+                                    child: AutoScrollCryptoRow(
+                                      children: cryptoChildren,
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              // 🟢 POSTLAR
+                              Column(children: profilePosts.value),
+                              const SizedBox(height: 100),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  // 🔥 YARDIMCI WIDGET: Menü öğesi
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color color = Colors.white,
+    bool isDelete = false,
+  }) {
+    return Column(
+      children: [
+        SizedBox(height: 4),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            margin: EdgeInsets.symmetric(horizontal: 10),
+            padding: EdgeInsets.all(10),
+            width: widthSizer(context),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDelete
+                    ? [bg, Colors.red.withOpacity(0.3)]
+                    : [bg, navColor],
+              ),
+              borderRadius: BorderRadius.circular(10),
+              border: isDelete
+                  ? Border.all(color: Colors.red.withOpacity(0.5))
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isDelete ? Colors.red.withOpacity(0.8) : color,
+                  ),
+                ),
+                Spacer(),
+                Icon(
+                  icon,
+                  color: isDelete ? Colors.red.withOpacity(0.8) : color,
+                  size: 15,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -602,7 +751,6 @@ void addPost(BuildContext context) {
                         ],
                       ),
                     ),
-
                     SizedBox(height: 10),
                     GestureDetector(
                       onTap: () async {

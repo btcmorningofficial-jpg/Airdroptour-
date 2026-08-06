@@ -1,6 +1,7 @@
 import 'package:airdrop/page/edit.dart';
 import 'package:airdrop/page/login.dart';
 import 'package:airdrop/services/admin.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:airdrop/services/post.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
@@ -8,6 +9,7 @@ import 'package:airdrop/tools/navigator.dart';
 import 'package:airdrop/widget/bottom.dart';
 import 'package:airdrop/widget/image.dart';
 import 'package:airdrop/widget/sizer.dart';
+import 'package:airdrop/widget/auto_scroll_crypto_row.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
@@ -34,18 +36,137 @@ class _YouProfilePageState extends State<YouProfilePage> {
   void initState() {
     super.initState();
     Future.delayed(Duration.zero, () async {
-      for (var element in YouProfileData.cripto()) {
-        if (AdminServices.cryptosNames.contains(element["image"])) {
-          profileCrypto.value.add(
-            CryptoWidget(
-              readOnly: true,
-              id: "id",
-              photo: element["image"],
-              name: element["name"],
-              details: element["details"],
+      await YouProfileData.getMyProfile(widget.uid);
+      if (!mounted) return;
+      var cryptoPoolRaw = await ByBugDatabase.getAll("crypto");
+      List<Map<String, dynamic>> cryptoPool = [];
+      for (var element in cryptoPoolRaw) {
+        Map<String, dynamic> val = Map<String, dynamic>.from(
+          element["value"] ?? {},
+        );
+        if ((val["name"] ?? "").toString().isEmpty) continue;
+          if ((val["image"] ?? "").toString().isEmpty) continue;
+        cryptoPool.add(val);
+      }
+      var finalCryptos = fillToThreeCryptos(
+        YouProfileData.cripto(),
+        cryptoPool,
+      );
+      profileCrypto.value.clear();
+      for (var element in finalCryptos) {
+        profileCrypto.value.add(
+          GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.black,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                builder: (context) {
+                  return Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            ClipOval(
+                              child: (element["image"] ?? "").toString().isNotEmpty
+                                  ? AirdroptourImage(
+                                      (element["image"]).toString(),
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Container(
+                                      width: 40,
+                                      height: 40,
+                                      color: Colors.orange,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        (element["name"] ?? "?").toString(),
+                                        style: const TextStyle(fontSize: 10, color: Colors.black),
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: h3((element["name"] ?? "").toString()),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        subP((element["details"] ?? "").toString()),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: CryptoWidget.exchangeLinks.entries.map((entry) {
+                            return GestureDetector(
+                              onTap: () async {
+                                final uri = Uri.tryParse(entry.value);
+                                if (uri != null) {
+                                  await launchUrl(
+                                    uri,
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: defaultColor,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: h5(entry.key),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            child: Container(
+              width: 70,
+              height: 70,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: (element["image"] ?? "").toString().isNotEmpty ? Colors.transparent : Colors.orange,
+                borderRadius: BorderRadius.circular(35),
+              ),
+              alignment: Alignment.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(35),
+                child: (element["image"] ?? "").toString().isNotEmpty
+                    ? AirdroptourImage(
+                        (element["image"]).toString(),
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.contain,
+                      )
+                    : Text(
+                        (element["name"] ?? "?").toString(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+              ),
             ),
-          );
-        }
+          ),
+        );
       }
       profileCrypto.notifyListeners();
       var socialData = YouProfileData.social();
@@ -56,7 +177,7 @@ class _YouProfilePageState extends State<YouProfilePage> {
         social.add([value["name"], value["url"]]);
         socialText.add(value["name"]);
       }
-      Post.getProfileYouPosts(YouProfileData.uid());
+      Post.getProfileYouPosts(widget.uid);
     });
   }
 
@@ -282,16 +403,17 @@ class _YouProfilePageState extends State<YouProfilePage> {
                               padding: const EdgeInsets.all(20),
                               child: h3("•", color: textColor.withOpacity(0.5)),
                             ),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: CosmosScroller(
-                                    scrollDirection: Axis.horizontal,
-                                    children: profileCrypto.value,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            ValueListenableBuilder<List<Widget>>(
+              valueListenable: profileCrypto,
+              builder: (context, cryptoChildren, _) {
+                return SizedBox(
+                  width: double.infinity,
+                  child: AutoScrollCryptoRow(
+                    children: cryptoChildren,
+                  ),
+                );
+              },
+            ),
                             Column(children: profilePostsYou.value),
                           ],
                         ),

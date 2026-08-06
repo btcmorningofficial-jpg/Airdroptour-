@@ -9,7 +9,7 @@ Widget markdownText(String text) {
     data: text,
     selectable: true,
     onTapLink: (text, href, title) async {
-      await openUrl(href ?? "https://bybug.com.tr");
+      await openUrl(href ?? "https://appairdroptour.yurtdisiisilanlari.com.tr");
     },
     styleSheet: MarkdownStyleSheet(
       listBullet: TextStyle(color: defaultColor, fontSize: 18),

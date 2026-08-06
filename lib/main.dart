@@ -1,39 +1,166 @@
+import 'dart:io';
 import 'package:airdrop/page/loading.dart';
 import 'package:airdrop/page/login.dart';
+import 'package:airdrop/page/channel_detail_page.dart';
+import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:airdrop/services/profile.dart';
 import 'package:airdrop/theme/color.dart';
-import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:app_links/app_links.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  ErrorWidget.builder = (details) => Material(color: Colors.white, child: Center(child: Padding(padding: const EdgeInsets.all(16), child: Text(details.exceptionAsString(), style: const TextStyle(color: Colors.red, fontSize: 12)))));
-  await initializeDateFormatting('en', null);
-  ByBugDB.initialize(
-    // Kendi sunucumuzdaki PHP + MySQL backend adresi
-    url: "https://appairdroptour.yurtdisiisilanlari.com.tr",
-    authToken: "",
-  );
-  final bool isSignedIn = await ByBugAuth.isSignedIn();
-  if (isSignedIn) {
-    await MyProfileData.getMyProfile();
+// 🔥 HATALARI TELEFONA KAYDEDEN FONKSİYON
+void _hatayiKaydet(String mesaj) {
+  try {
+    final dosya = File('/storage/emulated/0/Download/airdrop_hata.txt');
+    dosya.writeAsStringSync('$mesaj\n', mode: FileMode.append);
+  } catch (e) {
+    // Sessizce geç
   }
-  runZonedGuarded(() {
-    runApp(MyApp(isSignedIn: isSignedIn));
+}
+
+
+final navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> _handleIncomingLink(Uri uri) async {
+  if (uri.host != 'join') return;
+  final channelId = uri.queryParameters['c'];
+  final inviterUid = uri.queryParameters['u'];
+  if (channelId == null || inviterUid == null) return;
+
+  final signedIn = await ByBugAuth.isSignedIn();
+  if (!signedIn) return;
+
+  final currentUid = await ByBugAuth.getUID();
+  if (currentUid == null) return;
+
+  final result = await ByBugChannel.redeemChannelInvite(
+    channelId: channelId,
+    inviterUid: inviterUid,
+  );
+
+  final ctx = navigatorKey.currentContext;
+  if (ctx == null) return;
+
+  if (result[0] != 1) {
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Text(result[1]?.toString() ?? 'Could not join channel'),
+      ),
+    );
+    return;
+  }
+
+  final channelsResult = await ByBugChannel.listChannels();
+  if (channelsResult[0] != 1) return;
+
+  final channels = List<dynamic>.from(channelsResult[1]);
+  Map<String, dynamic>? targetChannel;
+  for (final c in channels) {
+    if (c['id'].toString() == channelId) {
+      targetChannel = Map<String, dynamic>.from(c);
+      break;
+    }
+  }
+  if (targetChannel == null) return;
+
+  Navigator.of(ctx).push(
+    MaterialPageRoute(
+      builder: (_) => ChannelDetailPage(
+        channel: targetChannel!,
+        currentUid: currentUid,
+      ),
+    ),
+  );
+}
+void main() async {
+  // 🔥 TÜM FLUTTER HATALARINI YAKALA
+  FlutterError.onError = (FlutterErrorDetails detay) {
+    String msg = "🔥 FLUTTER HATA: ${detay.exception}\nSTACK: ${detay.stack}\n";
+    _hatayiKaydet(msg);
+    debugPrint(msg);
+  };
+
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Release modda da hatayı ekranda göster
+    ErrorWidget.builder = (details) => Material(
+          color: Colors.black,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                details.exceptionAsString(),
+                style: const TextStyle(color: Colors.red, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        );
+
+    await initializeDateFormatting('en', null);
+
+    // 🔥 API'yi başlat
+    ByBugDB.initialize(
+      url: "https://appairdroptour.yurtdisiisilanlari.com.tr",
+      authToken: "",
+    );
+
+  AppLinks().uriLinkStream.listen((uri) {
+    _handleIncomingLink(uri);
+  });
+
+    bool isSignedIn = false;
+    String? startupError;
+
+    try {
+      isSignedIn = await ByBugAuth.isSignedIn();
+      if (isSignedIn) {
+        try {
+          await MyProfileData.getMyProfile();
+        } catch (e) {
+          _hatayiKaydet("PROFİL YÜKLEME HATASI: $e");
+          isSignedIn = true;
+        }
+      }
+    } catch (e, s) {
+      _hatayiKaydet("AUTH HATASI: $e\n$s");
+      await Future.delayed(const Duration(seconds: 2));
+      try {
+        isSignedIn = await ByBugAuth.isSignedIn();
+        if (isSignedIn) {
+          try {
+            await MyProfileData.getMyProfile();
+          } catch (e) {
+            _hatayiKaydet("PROFİL YÜKLEME HATASI (retry): $e");
+            isSignedIn = true;
+          }
+        }
+      } catch (e2, s2) {
+        _hatayiKaydet("AUTH HATASI (retry): $e2\n$s2");
+        startupError = e2.toString();
+        isSignedIn = false;
+      }
+    }
+
+    runApp(MyApp(isSignedIn: isSignedIn, startupError: startupError));
   }, (error, stack) {
-    debugPrint('YAKALANAN HATA: $error');
+    _hatayiKaydet("🔥 ZONED HATA: $error\nSTACK: $stack");
+    debugPrint("🔥 ZONED HATA: $error");
   });
 }
 
 class MyApp extends StatelessWidget {
   final bool isSignedIn;
-  const MyApp({super.key, required this.isSignedIn});
+  final String? startupError;
+  const MyApp({super.key, required this.isSignedIn, this.startupError});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Airdroptour',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -76,7 +203,39 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: isSignedIn ? LoadingPage() : LoginPage(),
+      home: isSignedIn
+          ? LoadingPage()
+          : Builder(
+              builder: (context) {
+                if (startupError != null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        backgroundColor: navColor,
+                        title: const Text(
+                          'Başlangıç Hatası',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                        content: SingleChildScrollView(
+                          child: Text(
+                            startupError!,
+                            style: TextStyle(color: textColor),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Kapat'),
+                          ),
+                        ],
+                      ),
+                    );
+                  });
+                }
+                return LoginPage();
+              },
+            ),
     );
   }
 }

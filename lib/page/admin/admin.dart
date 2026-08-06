@@ -1,4 +1,5 @@
 import 'package:airdrop/page/admin/ads.dart';
+import 'package:airdrop/page/admin/channels.dart';
 import 'package:airdrop/page/admin/criptos.dart';
 import 'package:airdrop/page/admin/news.dart';
 import 'package:airdrop/page/admin/rains.dart';
@@ -120,6 +121,16 @@ class _AdminPanelState extends State<AdminPanel> {
                                         size: 30,
                                       ),
                                     ),
+                                    GestureDetector(
+                                      onTap: () {
+                                        pageController.jumpToPage(5);
+                                      },
+                                      child: Icon(
+                                        Icons.workspace_premium_outlined,
+                                        color: textColor,
+                                        size: 30,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -135,6 +146,7 @@ class _AdminPanelState extends State<AdminPanel> {
                                 NewsAdmin(),
                                 AdminRains(),
                                 AdminADS(),
+                                AdminChannels(),
                               ],
                             ),
                           ),

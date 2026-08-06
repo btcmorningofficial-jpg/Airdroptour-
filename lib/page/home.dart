@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:airdrop/page/rain_explorer.dart';
 import 'package:airdrop/page/messages/dm.dart';
 import 'package:airdrop/page/profile.dart';
@@ -19,6 +21,7 @@ import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:flutter/material.dart';
+import 'package:airdrop/page/notifications_page.dart';
 
 ValueNotifier<List<Widget>> postsW = ValueNotifier([]);
 PageController matchController = PageController();
@@ -32,14 +35,63 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   ValueNotifier<List<Widget>> pageDatas = ValueNotifier([]);
+
+  static bool _isLoading = false;
+  static DateTime? _lastLoadedAt;
+  static const Duration _minReloadGap = Duration(seconds: 20);
+
+  final ValueNotifier<int> _unreadCount = ValueNotifier(0);
+  Timer? _notifTimer;
+
   @override
   void initState() {
     super.initState();
-    MyProfileData.getMyProfile();
-    Post.getPosts();
-    AdminServices.getHomeCryptos(context);
-    AdminServices.getAds(context);
-    MessageServices.getDM();
+    _loadHomeData();
+    _loadUnreadCount();
+    _notifTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _loadUnreadCount();
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifTimer?.cancel();
+    _unreadCount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final list = await ByBugInvite.getNotifications();
+      final count = list.where((n) => n['read'] != true).length;
+      if (!mounted) return;
+      _unreadCount.value = count;
+    } catch (_) {
+      // sessizce yut, rozet güncellenmez
+    }
+  }
+
+  Future<void> _loadHomeData({bool force = false}) async {
+    if (_isLoading) return;
+    if (!force &&
+        _lastLoadedAt != null &&
+        DateTime.now().difference(_lastLoadedAt!) < _minReloadGap) {
+      return;
+    }
+    _isLoading = true;
+    try {
+      await Future.wait([
+        MyProfileData.getMyProfile(),
+        Post.getPosts(),
+        AdminServices.getHomeCryptos(context),
+        AdminServices.getAds(context),
+        MessageServices.getDM(),
+      ]);
+      _lastLoadedAt = DateTime.now();
+    } catch (_) {
+    } finally {
+      _isLoading = false;
+    }
   }
 
   @override
@@ -91,13 +143,34 @@ class _HomePageState extends State<HomePage> {
                                 },
                                 child: Icon(Icons.whatshot, size: 26),
                               ),
-                  SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: () {
-                      push(context, DMBox());
-                    },
-                    child: Icon(Icons.messenger_outline, size: 26),
-                  ),
+                              SizedBox(width: 10),
+                              GestureDetector(
+                                onTap: () {
+                                  push(context, DMBox());
+                                },
+                                child: Icon(Icons.messenger_outline, size: 26),
+                              ),
+                              SizedBox(width: 10),
+                              GestureDetector(
+                                onTap: () async {
+                                  await push(context, const NotificationsPage());
+                                  _loadUnreadCount();
+                                },
+                                child: ValueListenableBuilder<int>(
+                                  valueListenable: _unreadCount,
+                                  builder: (context, count, child) {
+                                    return Badge(
+                                      isLabelVisible: count > 0,
+                                      label: Text(count > 99 ? '99+' : '$count'),
+                                      backgroundColor: Colors.redAccent,
+                                      child: const Icon(
+                                        Icons.notifications_none,
+                                        size: 26,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                               SizedBox(width: 10),
                             ],
                           ),
@@ -151,30 +224,36 @@ class _HomePageState extends State<HomePage> {
                   pageDatas.value.clear();
                   var usrs = await ByBugDatabase.getAll(bucket);
                   for (var element in usrs) {
-                    if (element["value"]["uid"] != MyProfileData.uid()) {
-                      List<Widget> ccryp = [];
-                      for (var cE
-                          in (element["value"]["data"]["cripto"] ?? [])) {
-                        if (AdminServices.cryptosNames.contains(cE["image"])) {
-                          ccryp.add(
-                            MatchCryptoChip(
-                              photo: cE["image"],
-                              name: cE["name"],
-                              details: cE["details"] ?? "",
-                            ),
-                          );
+                    try {
+                      final value = element["value"];
+                      if (value == null) continue;
+                      final data = value["data"] as Map<String, dynamic>? ?? {};
+                      if (value["uid"] != MyProfileData.uid()) {
+                        List<Widget> ccryp = [];
+                        for (var cE in (data["cripto"] ?? [])) {
+                          if (AdminServices.cryptosNames.contains(cE["image"])) {
+                            ccryp.add(
+                              MatchCryptoChip(
+                                photo: cE["image"],
+                                name: cE["name"],
+                                details: cE["details"] ?? "",
+                              ),
+                            );
+                          }
                         }
+                        pageDatas.value.add(
+                          MatchPage(
+                            matchCrypto: ccryp,
+                            name: value["name"] ?? "",
+                            bio: data["bio"] ?? "",
+                            uid: value["uid"] ?? "",
+                            photo: value["photo"] ?? "",
+                            verify: data["verify"] ?? false,
+                          ),
+                        );
                       }
-                      pageDatas.value.add(
-                        MatchPage(
-                          matchCrypto: ccryp,
-                          name: element["value"]["name"],
-                          bio: element["value"]["data"]["bio"],
-                          uid: element["value"]["uid"],
-                          photo: element["value"]["photo"],
-            verify: element["value"]["data"]["verify"] ?? false,
-                        ),
-                      );
+                    } catch (e) {
+                      continue;
                     }
                   }
                   pageDatas.value.shuffle();
@@ -271,7 +350,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-      ),
-    );
+      ),    );
   }
 }

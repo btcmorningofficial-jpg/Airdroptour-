@@ -18,6 +18,14 @@ class BottomPage extends StatelessWidget {
   final int page;
   const BottomPage({super.key, required this.child, required this.page});
 
+  void _goTo(BuildContext context, int targetPage, Widget page) {
+    if (targetPage == this.page) return;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => page),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -27,7 +35,7 @@ class BottomPage extends StatelessWidget {
           SizedBox(
             width: widthSizer(context),
             height: height(context),
-            child: child,
+          child: Padding(padding: const EdgeInsets.only(bottom: 70), child: child),
           ),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -42,9 +50,7 @@ class BottomPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
-                  onTap: () {
-                    push(context, HomePage());
-                  },
+                  onTap: () => _goTo(context, 0, HomePage()),
                   child: Icon(
                     Icons.home,
                     color: page == 0 ? textColor : textColor.withOpacity(0.5),
@@ -52,9 +58,7 @@ class BottomPage extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    push(context, ExplorerPage());
-                  },
+                  onTap: () => _goTo(context, 1, ExplorerPage()),
                   child: Icon(
                     Icons.explore,
                     color: page == 1 ? textColor : textColor.withOpacity(0.5),
@@ -62,9 +66,7 @@ class BottomPage extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    push(context, ChannelsPage());
-                  },
+                  onTap: () => _goTo(context, 2, ChannelsPage()),
                   child: Icon(
                     Icons.campaign,
                     color: page == 2 ? textColor : textColor.withOpacity(0.5),
@@ -72,9 +74,7 @@ class BottomPage extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    push(context, NewsPage());
-                  },
+                  onTap: () => _goTo(context, 3, NewsPage()),
                   child: Icon(
                     Icons.newspaper,
                     color: page == 3 ? textColor : textColor.withOpacity(0.5),
@@ -82,9 +82,7 @@ class BottomPage extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    push(context, ProfilePage());
-                  },
+                  onTap: () => _goTo(context, 4, ProfilePage()),
                   child: Icon(
                     Icons.person,
                     color: page == 4 ? textColor : textColor.withOpacity(0.5),

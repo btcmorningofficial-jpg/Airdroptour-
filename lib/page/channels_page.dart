@@ -3,6 +3,24 @@ import 'package:airdrop/services/bybugdb_bridge.dart';
 import 'package:airdrop/theme/color.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/page/channel_detail_page.dart';
+import 'package:airdrop/page/home.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+const Map<String, Color> kChannelCategories = {
+  'General': Color(0xFF9E9E9E),
+  'Coin': Color(0xFFFFD700),
+  'Token': Color(0xFF9C27B0),
+  'NFT': Color(0xFFEC4899),
+  'Memecoin': Color(0xFFFF9800),
+  'DeFi': Color(0xFF2196F3),
+  'GameFi': Color(0xFF4CAF50),
+  'Metaverse': Color(0xFF00BCD4),
+  'Layer 1': Color(0xFFF44336),
+  'Layer 2': Color(0xFF3F51B5),
+  'Stablecoin': Color(0xFF607D8B),
+  'DAO': Color(0xFFFFC107),
+  'AI': Color(0xFF009688),
+};
 
 class ChannelsPage extends StatefulWidget {
   const ChannelsPage({super.key});
@@ -14,16 +32,31 @@ class ChannelsPage extends StatefulWidget {
 class _ChannelsPageState extends State<ChannelsPage> {
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
+  final _searchController = TextEditingController();
   bool _creating = false;
   bool _loadingList = true;
   String? _error;
   String? _uid;
   List<Map<String, dynamic>> _channels = [];
+  String _searchQuery = '';
+  String _selectedCategory = 'General';
+  String _filterCategory = 'All';
 
   @override
   void initState() {
     super.initState();
     _init();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _init() async {
@@ -33,7 +66,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
 
   Future<void> _loadChannels() async {
     setState(() => _loadingList = true);
-    final result = await ByBugChannelList.listChannels();
+    final result = await ByBugChannel.listChannels();
     if (result[0] == 1) {
       final List<dynamic> items = result[1];
       setState(() {
@@ -43,6 +76,22 @@ class _ChannelsPageState extends State<ChannelsPage> {
     } else {
       setState(() => _loadingList = false);
     }
+  }
+
+  List<Map<String, dynamic>> get _filteredChannels {
+    final list = _channels.where((c) {
+      final name = (c['name'] ?? '').toString().toLowerCase();
+      final desc = (c['description'] ?? '').toString().toLowerCase();
+      final matchesSearch = _searchQuery.isEmpty || name.contains(_searchQuery) || desc.contains(_searchQuery);
+      final matchesCategory = _filterCategory == 'All' || (c['category'] ?? 'General') == _filterCategory;
+      return matchesSearch && matchesCategory;
+    }).toList();
+    list.sort((a, b) {
+      final aP = a['is_premium'] == true ? 1 : 0;
+      final bP = b['is_premium'] == true ? 1 : 0;
+      return bP.compareTo(aP);
+    });
+    return list;
   }
 
   Future<void> _createChannel() async {
@@ -55,6 +104,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
     final result = await ByBugChannel.createChannel(
       name: _nameController.text.trim(),
       description: _descController.text.trim(),
+      category: _selectedCategory,
     );
 
     setState(() => _creating = false);
@@ -73,14 +123,25 @@ class _ChannelsPageState extends State<ChannelsPage> {
     }
   }
 
-
   void _showChannelMenu(Map<String, dynamic> channel) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: navColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            ListTile(
+              leading: const Icon(Icons.workspace_premium, color: Colors.green),
+              title: const Text('Apply for Premium', style: TextStyle(color: Colors.green)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _applyForPremium(channel);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Delete Channel', style: TextStyle(color: Colors.red)),
@@ -95,20 +156,41 @@ class _ChannelsPageState extends State<ChannelsPage> {
     );
   }
 
+  Future<void> _applyForPremium(Map<String, dynamic> channel) async {
+    final subject = Uri.encodeComponent("Premium Application - ${channel['name'] ?? ''}");
+    final body = Uri.encodeComponent(
+      "Channel name: ${channel['name'] ?? ''}\n"
+      "Channel ID: ${channel['id'] ?? ''}\n"
+      "Category: ${channel['category'] ?? 'General'}\n\n"
+      "Please review my channel for Premium status.",
+    );
+    final uri = Uri.parse('mailto:airdroptour@gmail.com?subject=$subject&body=$body');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open email app')),
+      );
+    }
+  }
+
   Future<void> _confirmDeleteChannel(Map<String, dynamic> channel) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Channel'),
-        content: Text('Are you sure you want to permanently delete "${channel["name"]}"? All messages will be deleted.'),
+        backgroundColor: navColor,
+        title: Text('Delete Channel', style: TextStyle(color: textColor)),
+        content: Text(
+          'Are you sure you want to permanently delete "${channel["name"]}"? All messages will be deleted.',
+          style: TextStyle(color: textColor.withOpacity(0.8)),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel', style: TextStyle(color: textColor))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
         ],
       ),
     );
     if (confirm != true) return;
-
     final result = await ByBugChannel.deleteChannel(channel['id']);
     if (result[0] == 1) {
       setState(() {
@@ -120,6 +202,7 @@ class _ChannelsPageState extends State<ChannelsPage> {
       );
     }
   }
+
   Future<void> _openChannel(Map<String, dynamic> channel) async {
     if (_uid == null) return;
     await Navigator.push(
@@ -139,6 +222,20 @@ class _ChannelsPageState extends State<ChannelsPage> {
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const HomePage()),
+              );
+            }
+          },
+        ),
         title: h1('Channels'),
       ),
       body: RefreshIndicator(
@@ -146,86 +243,279 @@ class _ChannelsPageState extends State<ChannelsPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            h3('Create a new channel'),
+            // Create channel card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: navColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withOpacity(0.06)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.add_circle_outline, color: textColor, size: 20),
+                      const SizedBox(width: 8),
+                      h3('Create a new channel'),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _nameController,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      hintText: 'Channel name',
+                      hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.06),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _descController,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      hintText: 'Description (optional)',
+                      hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.06),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: kChannelCategories.keys.map((cat) {
+                    final selected = _selectedCategory == cat;
+                    final catColor = kChannelCategories[cat]!;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedCategory = cat),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: selected ? catColor : catColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: catColor, width: 1),
+                        ),
+                        child: Text(
+                          cat,
+                          style: TextStyle(
+                            color: selected ? Colors.white : catColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 10),
+                    Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                  ],
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      ),
+                      onPressed: _creating ? null : _createChannel,
+                      child: _creating
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('Create Channel', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Row(
+              children: [
+                h3('All channels'),
+                const Spacer(),
+                Text('${_filteredChannels.length}', style: TextStyle(color: textColor.withOpacity(0.5))),
+              ],
+            ),
             const SizedBox(height: 10),
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: ['All', ...kChannelCategories.keys].map((cat) {
+                final selected = _filterCategory == cat;
+                final catColor = cat == 'All' ? Colors.green : kChannelCategories[cat]!;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _filterCategory = cat),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selected ? catColor : catColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: catColor, width: 1),
+                      ),
+                      child: Text(
+                        cat,
+                        style: TextStyle(
+                          color: selected ? Colors.white : catColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+            // Search box
             TextField(
-              controller: _nameController,
+              controller: _searchController,
               style: TextStyle(color: textColor),
-              decoration: const InputDecoration(
-                hintText: 'Channel name',
+              decoration: InputDecoration(
+                hintText: 'Search channels...',
+                hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                prefixIcon: Icon(Icons.search, color: textColor.withOpacity(0.5)),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.close, color: textColor.withOpacity(0.5)),
+                        onPressed: () => _searchController.clear(),
+                      )
+                    : null,
+                filled: true,
+                fillColor: navColor,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _descController,
-              style: TextStyle(color: textColor),
-              decoration: const InputDecoration(
-                hintText: 'Description (optional)',
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(_error!, style: const TextStyle(color: Colors.red)),
-              ),
-            ElevatedButton(
-              onPressed: _creating ? null : _createChannel,
-              child: _creating
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Create Channel'),
-            ),
-            const SizedBox(height: 30),
-            h3('All channels'),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 14),
+
             if (_loadingList)
-              const Center(child: CircularProgressIndicator())
-            else if (_channels.isEmpty)
-              const Text('No channels yet')
+              const Padding(
+                padding: EdgeInsets.only(top: 20),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_filteredChannels.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 30),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.forum_outlined, color: textColor.withOpacity(0.3), size: 48),
+                      const SizedBox(height: 10),
+                      Text(
+                        _searchQuery.isNotEmpty ? 'No channels match your search' : 'No channels yet',
+                        style: TextStyle(color: textColor.withOpacity(0.5)),
+                      ),
+                    ],
+                  ),
+                ),
+              )
             else
-              ..._channels.map((channel) => GestureDetector(
+              ..._filteredChannels.map((channel) => GestureDetector(
                     onTap: () => _openChannel(channel),
-                onLongPress: () => channel['owner_id'] == _uid ? _showChannelMenu(channel) : null,
+                    onLongPress: channel['owner_id'] == _uid ? () => _showChannelMenu(channel) : null,
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: navColor,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white.withOpacity(0.06)),
                       ),
                       child: Row(
                         children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.white24,
-                  backgroundImage: (channel['avatar_url'] != null && channel['avatar_url'].toString().isNotEmpty) ? NetworkImage(channel['avatar_url'].toString()) : null,
-                  child: (channel['avatar_url'] == null || channel['avatar_url'].toString().isEmpty) ? Text((channel['name']?.toString().isNotEmpty == true) ? channel['name'].toString()[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)) : null,
-                ),
-                const SizedBox(width: 12),
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.white24,
+                            backgroundImage: (channel['avatar_url'] != null && channel['avatar_url'].toString().isNotEmpty)
+                                ? NetworkImage(channel['avatar_url'].toString())
+                                : null,
+                            child: (channel['avatar_url'] == null || channel['avatar_url'].toString().isEmpty)
+                                ? Text(
+                                    (channel['name']?.toString().isNotEmpty == true)
+                                        ? channel['name'].toString()[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  channel['name']?.toString() ?? '',
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        channel['name']?.toString() ?? '',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 15),
+                                      ),
+                                    ),
+                                    if (channel['is_premium'] == true) ...[
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.verified, color: Colors.blue, size: 16),
+                                    ],
+                                ],
                                 ),
-                                if ((channel['description'] ?? '').toString().isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (kChannelCategories[channel['category']] ?? kChannelCategories['General']!).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: kChannelCategories[channel['category']] ?? kChannelCategories['General']!, width: 1),
+                    ),
+                    child: Text(
+                      (channel['category'] ?? 'General').toString(),
+                      style: TextStyle(color: kChannelCategories[channel['category']] ?? kChannelCategories['General']!, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                                if ((channel['description'] ?? '').toString().isNotEmpty) ...[
+                                  const SizedBox(height: 2),
                                   Text(
                                     channel['description'].toString(),
-                                    style: TextStyle(color: textColor.withOpacity(0.6)),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 13),
                                   ),
+                                ],
                               ],
                             ),
                           ),
-                          Icon(Icons.chevron_right, color: textColor),
+                          Icon(Icons.chevron_right, color: textColor.withOpacity(0.4)),
                         ],
                       ),
                     ),

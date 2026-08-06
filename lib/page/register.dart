@@ -37,6 +37,11 @@ class RegisterPage extends StatelessWidget {
               keyboardType: TextInputType.visiblePassword,
               obscureText: true,
             ),
+            textfield(
+              text: "Referral Code (optional)",
+              textController: Auth.referralCode,
+              keyboardType: TextInputType.text,
+            ),
             SizedBox(height: 10),
             subP("By registering you agree to our policies."),
             SizedBox(height: 10),

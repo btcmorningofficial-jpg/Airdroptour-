@@ -262,6 +262,7 @@ class AdminServices extends ChangeNotifier {
     // Borsa linklerini arka planda yükle (kart açıldığında hazır olsun).
     getExchangeLinks(context);
     var crypto = await ByBugDatabase.getAll("crypto");
+    debugPrint("DEBUG getHomeCryptos: crypto.length=${crypto.length}");
     cryptosNames.clear();
     List<Widget> tempCrypto = [];
     List<Widget> tempCryptoExplorer = [];
@@ -858,13 +859,14 @@ class CryptoWidget extends StatelessWidget {
                       GestureDetector(
                         onTap: () async {
                           if (MyProfileData.hasFavorite(name)) {
-                            MyProfileData.removeFavorite(name);
+                            await MyProfileData.removeFavorite(name);
                           } else {
                             await MyProfileData.addFavorite(
-                              photo,
-                              details,
-                              name,
-                            );
+                        photo,
+                        details,
+                        name,
+                        website: website,
+                      );
                           }
 
                           if (!context.mounted) return;
