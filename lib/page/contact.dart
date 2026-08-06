@@ -9,6 +9,27 @@ import 'package:airdrop/widget/snack.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+
+Future<void> _openEmail(BuildContext context) async {
+  const email = 'airdroptour@gmail.com';
+  final uri = Uri.parse('mailto:$email');
+  bool launched = false;
+  try {
+    launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (_) {
+    launched = false;
+  }
+  if (launched) return;
+  await Clipboard.setData(const ClipboardData(text: email));
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('E-posta adresi panoya kopyalandı: airdroptour@gmail.com')),
+    );
+  }
+}
 
 class Contact extends StatelessWidget {
   const Contact({super.key});
@@ -67,9 +88,7 @@ class Contact extends StatelessWidget {
                                         Icons.alternate_email_rounded,
                                         "Email Address",
                                         () {
-                                          openUrl(
-                                            "mailto:airdroptour@gmail.com",
-                                          );
+                                          _openEmail(context);
                                         },
                                       ),
                                       _btn(Icons.link, "Instagram", () {
