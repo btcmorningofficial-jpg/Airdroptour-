@@ -973,6 +973,7 @@ class ByBugChannel {
         'priceChange24h': best['priceChange']?['h24'],
         'symbol': best['baseToken']?['symbol'],
         'chainId': best['chainId'],
+        'imageUrl': best['info']?['imageUrl'],
       };
     } catch (e) {
       debugPrint('ByBugChannel.fetchTokenPrice hatası: $e');

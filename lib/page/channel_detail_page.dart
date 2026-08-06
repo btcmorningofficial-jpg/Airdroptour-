@@ -757,11 +757,25 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                     const SizedBox(width: 8),
-                    const Text('Fiyat yukleniyor...', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const Text('Loading price...', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
                 )
               : Row(
                   children: [
+                    if ((_priceData!['imageUrl'] ?? '').toString().isNotEmpty) ...[
+                      ClipOval(
+                        child: Image.network(
+                          _priceData!['imageUrl'].toString(),
+                          width: 18,
+                          height: 18,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.currency_bitcoin, color: Colors.white70, size: 18),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ] else ...[
+                      const Icon(Icons.currency_bitcoin, color: Colors.white70, size: 18),
+                      const SizedBox(width: 6),
+                    ],
                     Text(
                       "${_priceData!['symbol'] ?? ''} \$${_priceData!['priceUsd'] ?? '-'}",
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
