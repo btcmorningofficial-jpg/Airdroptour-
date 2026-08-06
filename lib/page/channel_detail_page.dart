@@ -48,8 +48,6 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
   bool _isUploadingImage = false;
   String? _playingPostId;
   final Map<String, GlobalKey> _postKeys = {};
-  Map<String, dynamic>? _priceData;
-  Timer? _priceTimer;
   final ScrollController _scrollController = ScrollController();
 
   bool get _isOwner => widget.channel['owner_id'] == widget.currentUid;
@@ -77,29 +75,15 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
     _avatarUrl = widget.channel['avatar_url'];
     _loadInitial();
     _loadMembers();
-    if ((widget.channel['contract_address'] ?? '').toString().isNotEmpty) {
-      _loadPrice();
-      _priceTimer = Timer.periodic(const Duration(seconds: 20), (_) => _loadPrice());
-    }
   }
 
   @override
   void dispose() {
-    _priceTimer?.cancel();
     ByBugChannel.stopStream();
     _postController.dispose();
     _recorder.dispose();
     _player.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadPrice() async {
-    final contract = (widget.channel['contract_address'] ?? '').toString();
-    if (contract.isEmpty) return;
-    final data = await ByBugChannel.fetchTokenPrice(contract);
-    if (mounted && data != null) {
-      setState(() => _priceData = data);
-    }
   }
 
   Future<void> _loadInitial() async {
@@ -741,57 +725,7 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
       body: Column(
         children: [
           if ((widget.channel['contract_address'] ?? '').toString().isNotEmpty)
-            Container(
-            margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: navColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: _priceData == null
-              ? Row(
-                  children: [
-                    const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Loading price...', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  ],
-                )
-              : Row(
-                  children: [
-                    if ((_priceData!['imageUrl'] ?? '').toString().isNotEmpty) ...[
-                      ClipOval(
-                        child: Image.network(
-                          _priceData!['imageUrl'].toString(),
-                          width: 18,
-                          height: 18,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.currency_bitcoin, color: Colors.white70, size: 18),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                    ] else ...[
-                      const Icon(Icons.currency_bitcoin, color: Colors.white70, size: 18),
-                      const SizedBox(width: 6),
-                    ],
-                    Text(
-                      "${_priceData!['symbol'] ?? ''} \$${_priceData!['priceUsd'] ?? '-'}",
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    const SizedBox(width: 8),
-                    Builder(builder: (context) {
-                      final change = double.tryParse((_priceData!['priceChange24h'] ?? '0').toString()) ?? 0;
-                      final isUp = change >= 0;
-                      return Text(
-                        "${isUp ? '+' : ''}${change.toStringAsFixed(2)}%",
-                        style: TextStyle(color: isUp ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
-                      );
-                    }),
-                  ],
-                ),
-            ),
+            _PriceCard(contractAddress: (widget.channel['contract_address'] ?? '').toString()),
           if (_posts.any((p) => p['pinned'] == true))
             Builder(builder: (context) {
               final pinnedPost =
@@ -1016,6 +950,95 @@ class _ChannelDetailPageState extends State<ChannelDetailPage> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _PriceCard extends StatefulWidget {
+  final String contractAddress;
+  const _PriceCard({required this.contractAddress});
+
+  @override
+  State<_PriceCard> createState() => _PriceCardState();
+}
+
+class _PriceCardState extends State<_PriceCard> {
+  Map<String, dynamic>? _priceData;
+  Timer? _priceTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrice();
+    _priceTimer = Timer.periodic(const Duration(seconds: 20), (_) => _loadPrice());
+  }
+
+  @override
+  void dispose() {
+    _priceTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadPrice() async {
+    if (widget.contractAddress.isEmpty) return;
+    final data = await ByBugChannel.fetchTokenPrice(widget.contractAddress);
+    if (mounted && data != null) {
+      setState(() => _priceData = data);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: navColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: _priceData == null
+          ? Row(
+              children: [
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 8),
+                const Text('Loading price...', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            )
+          : Row(
+              children: [
+                if ((_priceData!['imageUrl'] ?? '').toString().isNotEmpty) ...[
+                  ClipOval(
+                    child: Image.network(
+                      _priceData!['imageUrl'].toString(),
+                      width: 18,
+                      height: 18,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.currency_bitcoin, color: Colors.white70, size: 18),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ] else ...[
+                  const Icon(Icons.currency_bitcoin, color: Colors.white70, size: 18),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  "${_priceData!['symbol'] ?? ''} \$${_priceData!['priceUsd'] ?? '-'}",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(width: 8),
+                Builder(builder: (context) {
+                  final change = double.tryParse((_priceData!['priceChange24h'] ?? '0').toString()) ?? 0;
+                  final isUp = change >= 0;
+                  return Text(
+                    "${isUp ? '+' : ''}${change.toStringAsFixed(2)}%",
+                    style: TextStyle(color: isUp ? Colors.greenAccent : Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                  );
+                }),
+              ],
+            ),
     );
   }
 }
