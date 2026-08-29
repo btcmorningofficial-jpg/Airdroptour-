@@ -7,13 +7,9 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 String parseURL(String url) {
-  if (url.contains("database.bybug.com.tr")) {
-    String fileName = url.split("/")[url.split("/").length - 1];
-
-    return "https://appairdroptour.yurtdisiisilanlari.com.tr/publicFile/$fileName";
-  } else {
-    return url;
-  }
+  if (url.isEmpty) return url;
+  String fileName = url.split("/")[url.split("/").length - 1];
+  return "https://appairdroptour.yurtdisiisilanlari.com.tr/publicFile/$fileName";
 }
 
 class ImageNetworks extends StatefulWidget {
@@ -67,7 +63,13 @@ class _PersistentImageState extends State<ImageNetworks> {
     }
 
     try {
-      final response = await http.get(Uri.parse(parseURL(widget.urlsa)));
+      final response = await http.get(
+        Uri.parse(parseURL(widget.urlsa)),
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      );
       if (response.statusCode == 200) {
         _bytes = response.bodyBytes;
         _cache[parseURL(widget.urlsa)] = _bytes!;
@@ -77,7 +79,6 @@ class _PersistentImageState extends State<ImageNetworks> {
     } catch (_) {
       _error = true;
     }
-
     if (mounted) setState(() {});
   }
 
