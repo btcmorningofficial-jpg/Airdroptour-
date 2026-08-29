@@ -7,9 +7,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 String parseURL(String url) {
-  if (url.isEmpty) return url;
-  String fileName = url.split("/")[url.split("/").length - 1];
-  return "https://appairdroptour.yurtdisiisilanlari.com.tr/publicFile/$fileName";
+  return url;
 }
 
 class ImageNetworks extends StatefulWidget {
