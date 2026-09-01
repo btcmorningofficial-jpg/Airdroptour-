@@ -968,13 +968,20 @@ class ByBugChannel {
         }
       }
       if (best == null) return null;
+      final symbol = (best['baseToken']?['symbol'] ?? '').toString().toLowerCase();
+      final dexImageUrl = best['info']?['imageUrl'];
+      final fallbackImageUrl = symbol.isNotEmpty
+          ? 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/$symbol.png'
+          : null;
+
       return {
         'priceUsd': best['priceUsd'],
         'priceChange24h': best['priceChange']?['h24'],
         'symbol': best['baseToken']?['symbol'],
         'chainId': best['chainId'],
-        'imageUrl': best['info']?['imageUrl'],
-        'imageUrl': best['info']?['imageUrl'],
+        'imageUrl': (dexImageUrl != null && dexImageUrl.toString().isNotEmpty)
+            ? dexImageUrl
+            : fallbackImageUrl,
       };
     } catch (e) {
       debugPrint('ByBugChannel.fetchTokenPrice hatası: $e');
