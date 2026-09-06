@@ -48,6 +48,36 @@ class _AdminChannelsState extends State<AdminChannels> {
     }
   }
 
+  Future<void> _confirmDeleteChannel(Map channel) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Channel'),
+        content: Text('Are you sure you want to delete "${channel['name'] ?? ''}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    final result = await ByBugChannel.deleteChannel(channel['id'].toString());
+    if (result[0] == 1) {
+      _load();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result[1]?.toString() ?? 'Failed to delete channel')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,6 +132,10 @@ class _AdminChannelsState extends State<AdminChannels> {
                               value: isPremium,
                               onChanged: (_) => _togglePremium(channel),
                               activeColor: Colors.amber,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDeleteChannel(channel),
                             ),
                           ],
                         ),

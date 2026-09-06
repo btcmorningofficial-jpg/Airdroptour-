@@ -84,7 +84,10 @@ class _ChannelsPageState extends State<ChannelsPage> {
       final desc = (c['description'] ?? '').toString().toLowerCase();
       final matchesSearch = _searchQuery.isEmpty || name.contains(_searchQuery) || desc.contains(_searchQuery);
       final matchesCategory = _filterCategory == 'All' || (c['category'] ?? 'General') == _filterCategory;
-      return matchesSearch && matchesCategory;
+      final isPremium = c['is_premium'] == true;
+      final memberCount = (c['member_count'] is num) ? (c['member_count'] as num).toInt() : 0;
+      final meetsThreshold = isPremium || memberCount >= 500;
+      return matchesSearch && matchesCategory && meetsThreshold;
     }).toList();
     list.sort((a, b) {
       final aP = a['is_premium'] == true ? 1 : 0;

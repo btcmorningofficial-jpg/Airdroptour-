@@ -19,6 +19,7 @@ import 'package:airdrop/widget/sizer.dart';
 import 'package:airdrop/widget/text.dart';
 import 'package:airdrop/widget/textfield.dart';
 import 'package:airdrop/services/bybugdb_bridge.dart';
+import 'package:airdrop/page/channel_detail_page.dart';
 import 'package:cosmos/cosmos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -39,16 +40,38 @@ class _ProfilePageState extends State<ProfilePage> {
   ValueNotifier<bool> bioLong = ValueNotifier(false);
   List<List<String>> social = [];
   List<String> socialText = [];
+  List<Map<String, dynamic>> _myChannels = [];
+  String? _profileUid;
 
   @override
   void initState() {
     super.initState();
     Future.delayed(Duration.zero, _loadProfileCrypto);
+    Future.delayed(Duration.zero, _loadMyChannels);
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Future<void> _loadMyChannels() async {
+    try {
+      _profileUid = await ByBugAuth.getUID();
+      final result = await ByBugChannel.listChannels();
+      if (!mounted) return;
+      if (result[0] == 1) {
+        final List<dynamic> items = result[1];
+        setState(() {
+          _myChannels = items
+              .map((e) => Map<String, dynamic>.from(e))
+              .where((c) => c['owner_id'] == _profileUid)
+              .toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Profile _loadMyChannels hatasi: \$e');
+    }
   }
 
   // 🔥 ANA FONKSİYON: Crypto'ları yükle ve göster
@@ -638,6 +661,65 @@ class _ProfilePageState extends State<ProfilePage> {
                                   );
                                 },
                               ),
+
+                              // MY CHANNELS
+                              if (_myChannels.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        'My Channels',
+                                        style: TextStyle(
+                                          color: defaultColor,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ..._myChannels.map((channel) {
+                                  return GestureDetector(
+                                    onTap: () async {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ChannelDetailPage(
+                                            channel: channel,
+                                            currentUid: _profileUid!,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: navColor,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              (channel['name'] ?? '').toString(),
+                                              style: TextStyle(color: defaultColor),
+                                            ),
+                                          ),
+                                          if (channel['is_premium'] == true)
+                                            const Icon(Icons.workspace_premium, color: Colors.green, size: 16),
+                                          const SizedBox(width: 6),
+                                          Icon(Icons.chevron_right, color: defaultColor, size: 18),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }),
+                                const SizedBox(height: 8),
+                              ],
 
                               // 🟢 POSTLAR
                               Column(children: profilePosts.value),
