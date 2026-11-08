@@ -592,6 +592,9 @@ class ByBugChannel {
     required String name,
     String description = '',
     String category = 'General',
+    String coinName = '',
+    String coinImage = '',
+    String contractAddress = '',
   }) async {
     try {
       if (!ByBugDB.isInitialized()) {
@@ -602,7 +605,14 @@ class ByBugChannel {
           .post(
             Uri.parse('${ByBugDB.apiBaseUrl}/db/channel_create.php'),
             headers: headers,
-            body: jsonEncode({'name': name, 'description': description, 'category': category}),
+            body: jsonEncode({
+            'name': name,
+            'description': description,
+            'category': category,
+            'coin_name': coinName,
+            'coin_image': coinImage,
+            'contract_address': contractAddress,
+          }),
           )
           .timeout(_kDefaultTimeout);
       final j = _safeDecode(resp);
